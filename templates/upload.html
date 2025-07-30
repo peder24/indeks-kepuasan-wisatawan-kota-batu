@@ -41,17 +41,20 @@
             height: 25px;
             border-radius: 15px;
         }
-        .navbar-brand {
-            font-weight: bold;
+        .s3-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
-        .sample-table {
-            font-size: 0.9em;
+        .s3-available {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        .format-card {
-            transition: transform 0.3s ease;
-        }
-        .format-card:hover {
-            transform: translateY(-5px);
+        .s3-unavailable {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
     </style>
 </head>
@@ -77,9 +80,62 @@
 
     <div class="container mt-4">
         <h2 class="text-center mb-5">
-            <i class="fas fa-upload me-2 text-primary"></i>
+            <i class="fas fa-cloud-upload-alt me-2 text-primary"></i>
             Upload Data Wisatawan
         </h2>
+
+        <!-- S3 Status -->
+        <div class="s3-status {% if s3_available %}s3-available{% else %}s3-unavailable{% endif %}">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-{% if s3_available %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+                <div>
+                    <strong>Cloud Storage Status:</strong>
+                    {% if s3_available %}
+                        <span class="text-success">Available</span> - Files will be stored securely in the cloud and can handle large datasets (up to 2GB+)
+                    {% else %}
+                        <span class="text-danger">Unavailable</span> - Cloud storage is not configured. Please contact administrator.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Data Info -->
+        {% if data_info %}
+        <div class="row mb-4">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-database me-2"></i>
+                            Current Dataset Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Filename:</strong> {{ data_info.filename }}</p>
+                                <p><strong>Size:</strong> {{ "%.2f"|format(data_info.size / 1024 / 1024) }} MB</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Last Modified:</strong> {{ data_info.modified }}</p>
+                                <p><strong>Source:</strong> 
+                                    <span class="badge bg-{% if data_info.source == 'S3' %}success{% else %}warning{% endif %}">
+                                        {{ data_info.source }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        {% if data_info.s3_key %}
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-cloud me-2"></i>
+                            <strong>Cloud Storage:</strong> Your data is safely stored in the cloud and accessible from anywhere.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Upload Section -->
         <div class="row justify-content-center">
@@ -88,39 +144,59 @@
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="fas fa-file-upload me-2"></i>
-                            Upload File Data
+                            Upload New Dataset
                         </h5>
                     </div>
                     <div class="card-body">
+                        {% if s3_available %}
                         <form id="uploadForm" enctype="multipart/form-data">
                             <div class="upload-area" id="uploadArea">
                                 <i class="fas fa-cloud-upload-alt fa-4x text-muted mb-3"></i>
-                                <h4>Drag & Drop File Anda Di Sini</h4>
-                                <p class="text-muted mb-3">atau klik untuk memilih file</p>
+                                <h4>Drag & Drop Your File Here</h4>
+                                <p class="text-muted mb-3">or click to browse files</p>
                                 <input type="file" id="fileInput" name="file" accept=".xlsx,.xls,.csv" style="display: none;">
-                                <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                                    <i class="fas fa-folder-open me-2"></i>Pilih File
+                                <button type="button" class="btn btn-primary btn-lg" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Select File
                                 </button>
                                 <p class="text-muted mt-3 mb-0">
-                                    <small>Support: Excel (.xlsx, .xls) dan CSV files. Max: 16MB</small>
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Supports: Excel (.xlsx, .xls) and CSV files. Maximum size: 100MB per upload.
+                                        <br>For larger files (up to 2GB), the system will process them efficiently using cloud storage.
+                                    </small>
                                 </p>
                             </div>
 
                             <div class="file-info" id="fileInfo">
                                 <div class="alert alert-info">
-                                    <i class="fas fa-file me-2"></i>
-                                    <span id="fileName"></span>
-                                    <span class="float-end" id="fileSize"></span>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-file me-2"></i>
+                                            <span id="fileName"></span>
+                                        </div>
+                                        <div>
+                                            <span id="fileSize" class="badge bg-info"></span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="submit" class="btn btn-success btn-lg w-100">
-                                    <i class="fas fa-upload me-2"></i>Upload & Analisis
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload to Cloud & Analyze
                                 </button>
                             </div>
                         </form>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Cloud Storage Unavailable:</strong> File upload is currently disabled because cloud storage is not configured.
+                            Please contact the administrator to enable this feature.
+                        </div>
+                        {% endif %}
 
                         <div class="progress mt-3" id="progressBar" style="display: none;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                 role="progressbar" style="width: 0%">
+                                <span id="progressText">Uploading...</span>
+                            </div>
                         </div>
 
                         <div id="uploadResult" class="mt-3"></div>
@@ -129,55 +205,60 @@
             </div>
         </div>
 
-        <!-- Format Requirements -->
+        <!-- Data Format Requirements -->
         <div class="row mt-5">
             <div class="col-12">
                 <h3 class="text-center mb-4">
-                    <i class="fas fa-info-circle me-2 text-info"></i>
-                    Format Data yang Diperlukan
+                    <i class="fas fa-table me-2 text-info"></i>
+                    Required Data Format
                 </h3>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6">
-                <div class="card format-card h-100">
+                <div class="card h-100">
                     <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-table me-2"></i>
-                            Kolom Wajib
+                            <i class="fas fa-columns me-2"></i>
+                            Required Columns
                         </h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped sample-table">
+                            <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Kolom</th>
-                                        <th>Tipe</th>
-                                        <th>Contoh</th>
+                                        <th>Column</th>
+                                        <th>Type</th>
+                                        <th>Example</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><code>wisata</code></td>
+                                        <td><code>reviewer_name</code></td>
                                         <td>Text</td>
-                                        <td>Pantai Kuta</td>
+                                        <td>John Doe</td>
                                     </tr>
                                     <tr>
                                         <td><code>rating</code></td>
-                                        <td>Angka (1-5)</td>
+                                        <td>Number (1-5)</td>
                                         <td>4</td>
                                     </tr>
                                     <tr>
-                                        <td><code>review</code></td>
+                                        <td><code>review_text</code></td>
                                         <td>Text</td>
-                                        <td>Tempat yang sangat bagus</td>
+                                        <td>Tempat yang bagus</td>
                                     </tr>
                                     <tr>
-                                        <td><code>waktu_kunjungan</code></td>
+                                        <td><code>wisata</code></td>
                                         <td>Text</td>
-                                        <td>Pagi/Siang/Sore/Malam</td>
+                                        <td>Jatim Park 1</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>visit_time</code></td>
+                                        <td>Text</td>
+                                        <td>Akhir pekan</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -186,99 +267,94 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card format-card h-100">
+                <div class="card h-100">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Contoh Data
+                            <i class="fas fa-cloud me-2"></i>
+                            Cloud Storage Benefits
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped sample-table">
-                                <thead>
-                                    <tr>
-                                        <th>wisata</th>
-                                        <th>rating</th>
-                                        <th>review</th>
-                                        <th>waktu_kunjungan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Pantai Kuta</td>
-                                        <td>5</td>
-                                        <td>Pantai yang indah dan bersih</td>
-                                        <td>Sore</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Candi Borobudur</td>
-                                        <td>4</td>
-                                        <td>Candi bersejarah yang menakjubkan</td>
-                                        <td>Pagi</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Gunung Bromo</td>
-                                        <td>5</td>
-                                        <td>Sunrise yang spektakuler</td>
-                                        <td>Pagi</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Large File Support:</strong> Handle datasets up to 2GB+ in size
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-shield-alt text-success me-2"></i>
+                                <strong>Secure Storage:</strong> Your data is encrypted and safely stored
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-sync-alt text-success me-2"></i>
+                                <strong>Automatic Backup:</strong> Files are automatically backed up
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-tachometer-alt text-success me-2"></i>
+                                <strong>Fast Processing:</strong> Optimized for quick data analysis
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-globe text-success me-2"></i>
+                                <strong>Global Access:</strong> Access your data from anywhere
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tips Section -->
+        <!-- Quick Actions -->
+        {% if data_info and s3_available %}
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header bg-warning text-dark">
+                    <div class="card-header bg-dark text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-lightbulb me-2"></i>
-                            Tips Upload Data
+                            <i class="fas fa-tools me-2"></i>
+                            Quick Actions
                         </h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <h6><i class="fas fa-check text-success me-2"></i>Yang Harus Dilakukan:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>Pastikan semua kolom wajib ada</li>
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>Rating harus berupa angka 1-5</li>
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>Review berupa text yang bermakna</li>
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>Hapus baris kosong</li>
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>Gunakan encoding UTF-8 untuk CSV</li>
-                                </ul>
+                            <div class="col-md-4">
+                                <a href="/download_current_data" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="fas fa-download me-2"></i>Download Current Data
+                                </a>
                             </div>
-                            <div class="col-md-6">
-                                <h6><i class="fas fa-times text-danger me-2"></i>Yang Harus Dihindari:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-times-circle text-danger me-2"></i>File lebih dari 16MB</li>
-                                    <li><i class="fas fa-times-circle text-danger me-2"></i>Rating di luar range 1-5</li>
-                                    <li><i class="fas fa-times-circle text-danger me-2"></i>Kolom kosong atau NULL</li>
-                                    <li><i class="fas fa-times-circle text-danger me-2"></i>Format tanggal yang tidak standar</li>
-                                    <li><i class="fas fa-times-circle text-danger me-2"></i>Karakter khusus yang aneh</li>
-                                </ul>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-info w-100 mb-2" onclick="listFiles()">
+                                    <i class="fas fa-list me-2"></i>View All Files
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/dashboard" class="btn btn-outline-success w-100 mb-2">
+                                    <i class="fas fa-chart-line me-2"></i>View Dashboard
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
+    </div>
 
-        <!-- Try Demo Button -->
-        <div class="row mt-4 mb-5">
-            <div class="col-12 text-center">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <h5>Belum punya data? Coba demo dengan sample data!</h5>
-                        <p class="text-muted">Lihat bagaimana sistem bekerja dengan data contoh yang sudah disediakan.</p>
-                        <a href="/dashboard" class="btn btn-primary btn-lg">
-                            <i class="fas fa-play me-2"></i>Coba Demo
-                        </a>
+    <!-- Files List Modal -->
+    <div class="modal fade" id="filesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cloud me-2"></i>Files in Cloud Storage
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="filesList">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -294,37 +370,42 @@
         const fileSize = document.getElementById('fileSize');
         const uploadForm = document.getElementById('uploadForm');
         const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
         const uploadResult = document.getElementById('uploadResult');
 
         // Drag and drop functionality
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                showFileInfo(files[0]);
-            }
-        });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    showFileInfo(files[0]);
+                }
+            });
 
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+        }
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                showFileInfo(e.target.files[0]);
-            }
-        });
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    showFileInfo(e.target.files[0]);
+                }
+            });
+        }
 
         function showFileInfo(file) {
             fileName.textContent = file.name;
@@ -340,60 +421,72 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showAlert('Silakan pilih file terlebih dahulu!', 'warning');
-                return;
-            }
-
-            formData.append('file', file);
-            
-            // Show progress bar
-            progressBar.style.display = 'block';
-            const progressBarFill = progressBar.querySelector('.progress-bar');
-            progressBarFill.style.width = '0%';
-            
-            // Simulate progress
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 90) progress = 90;
-                progressBarFill.style.width = progress + '%';
-            }, 200);
-
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(progressInterval);
-                progressBarFill.style.width = '100%';
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showAlert(result.message, 'success');
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 2000);
-                } else {
-                    showAlert(result.error, 'danger');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData();
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    showAlert('Please select a file first!', 'warning');
+                    return;
                 }
-            } catch (error) {
-                clearInterval(progressInterval);
-                showAlert('Terjadi kesalahan saat upload: ' + error.message, 'danger');
-            } finally {
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                }, 1000);
-            }
-        });
+
+                formData.append('file', file);
+                
+                // Show progress bar
+                progressBar.style.display = 'block';
+                const progressBarFill = progressBar.querySelector('.progress-bar');
+                progressBarFill.style.width = '0%';
+                progressText.textContent = 'Uploading to cloud...';
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    progressBarFill.style.width = progress + '%';
+                    
+                    if (progress < 30) {
+                        progressText.textContent = 'Uploading to cloud...';
+                    } else if (progress < 60) {
+                        progressText.textContent = 'Processing data...';
+                    } else {
+                        progressText.textContent = 'Analyzing data...';
+                    }
+                }, 200);
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    clearInterval(progressInterval);
+                    progressBarFill.style.width = '100%';
+                    progressText.textContent = 'Complete!';
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showAlert(result.message, 'success');
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 2000);
+                    } else {
+                        showAlert(result.error, 'danger');
+                    }
+                } catch (error) {
+                    clearInterval(progressInterval);
+                    showAlert('Upload failed: ' + error.message, 'danger');
+                } finally {
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                    }, 2000);
+                }
+            });
+        }
 
         function showAlert(message, type) {
             uploadResult.innerHTML = `
@@ -403,6 +496,36 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             `;
+        }
+
+        async function listFiles() {
+            const modal = new bootstrap.Modal(document.getElementById('filesModal'));
+            modal.show();
+            
+            try {
+                const response = await fetch('/list_files');
+                const result = await response.json();
+                
+                if (response.ok && result.files) {
+                    let html = '';
+                    if (result.files.length === 0) {
+                        html = '<p class="text-muted text-center">No files found in cloud storage.</p>';
+                    } else {
+                        html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>File</th><th>Size</th><th>Modified</th></tr></thead><tbody>';
+                        result.files.forEach(file => {
+                            const size = formatFileSize(file.size);
+                            const date = new Date(file.last_modified).toLocaleString();
+                            html += `<tr><td>${file.key.split('/').pop()}</td><td>${size}</td><td>${date}</td></tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                    }
+                    document.getElementById('filesList').innerHTML = html;
+                } else {
+                    document.getElementById('filesList').innerHTML = '<p class="text-danger">Error loading files.</p>';
+                }
+            } catch (error) {
+                document.getElementById('filesList').innerHTML = '<p class="text-danger">Error loading files.</p>';
+            }
         }
     </script>
 </body>

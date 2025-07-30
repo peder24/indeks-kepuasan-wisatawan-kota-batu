@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ['python312', 'pip']
+
+[phases.install]
+cmds = [
+    'pip install --upgrade pip',
+    'pip install -r requirements.txt --no-cache-dir'
+]
+
+[phases.build]
+cmds = [
+    'python -c "import nltk; nltk.download(\"punkt\", quiet=True); nltk.download(\"stopwords\", quiet=True)"'
+]
+
+[start]
+cmd = 'gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --max-requests 1000 --preload'
