@@ -19,4 +19,4 @@ RUN mkdir -p data/backups data/temp
 
 EXPOSE 5000
 
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--timeout", "120", "--workers", "1"]
+CMD ["python", "app.py"]
