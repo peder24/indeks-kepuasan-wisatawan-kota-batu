@@ -3,204 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Indeks Kepuasan Wisatawan</title>
+    <title>Dashboard - Tourist Satisfaction Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f8f9fa; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
         }
-        .card { 
-            border-radius: 10px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-            margin-bottom: 20px; 
-            transition: transform 0.2s ease-in-out;
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            border: none;
         }
-        .card:hover {
-            transform: translateY(-2px);
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
         }
-        .navbar-brand { 
-            font-weight: bold; 
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
         .chart-container {
             height: 400px;
-            width: 100%;
-        }
-        .metric-card {
-            text-align: center;
-            padding: 25px;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-        .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .metric-card.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .metric-card.success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        .metric-card.info {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        }
-        .metric-card.danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        .metric-card h2 {
-            margin: 10px 0;
-            font-weight: bold;
-            font-size: 2.5rem;
-        }
-        .metric-card p {
-            margin: 0;
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        .metric-card .icon {
-            font-size: 3rem;
-            opacity: 0.3;
-            position: absolute;
-            right: 20px;
-            top: 20px;
-        }
-        .data-info {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            border-left: 4px solid #2196f3;
             margin-bottom: 20px;
         }
-        .data-statistics {
-            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-left: 4px solid #9c27b0;
-        }
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-        }
-        .stat-item h4 {
-            margin: 0;
-            color: #6a1b9a;
+        .navbar-brand {
             font-weight: bold;
         }
-        .stat-item small {
-            color: #7b1fa2;
-            font-weight: 500;
-        }
-        .chart-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-        .chart-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 20px;
-            border-bottom: 1px solid #dee2e6;
-        }
-        .chart-header h5 {
-            margin: 0;
-            color: #495057;
-            font-weight: 600;
-        }
-        .additional-stats {
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-            border-radius: 15px;
-            padding: 25px;
-            border-left: 4px solid #ff9800;
-        }
-        .additional-stats .stat-box {
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .additional-stats .stat-box h4 {
-            color: #e65100;
-            margin-bottom: 5px;
-        }
-        .additional-stats .stat-box p {
-            color: #bf360c;
-            margin: 0;
-            font-weight: 500;
-        }
-        .refresh-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 1000;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .trend-indicator {
-            display: inline-block;
-            margin-left: 10px;
-            font-size: 1.2rem;
-        }
-        .trend-up { color: #4caf50; }
-        .trend-down { color: #f44336; }
-        .trend-stable { color: #ff9800; }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="text-center">
-            <div class="spinner"></div>
-            <p class="mt-3">Memuat dashboard...</p>
-        </div>
-    </div>
-
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="fas fa-chart-line me-2"></i>Indeks Kepuasan Wisatawan
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line me-2"></i>Tourist Satisfaction Analyzer
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link active" href="/dashboard">
                     <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                 </a>
                 <a class="nav-link" href="/analysis">
-                    <i class="fas fa-analytics me-1"></i>Analisis
+                    <i class="fas fa-analytics me-1"></i>Analysis
                 </a>
                 <a class="nav-link" href="/upload">
                     <i class="fas fa-upload me-1"></i>Upload Data
@@ -210,633 +64,232 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <h1 class="text-center mb-0">
-                    <i class="fas fa-mountain text-primary me-3"></i>
-                    Indeks Kepuasan Wisatawan Kota Batu
-                </h1>
-                <p class="text-center text-muted mt-2">
-                    Dashboard Real-time untuk Monitoring Kepuasan Wisatawan
-                </p>
-            </div>
-        </div>
-        
-        <!-- Data Info Bar -->
-        {% if data_info %}
-        <div class="data-info d-flex justify-content-between align-items-center">
-            <div>
-                <i class="fas fa-database me-2"></i> 
-                <strong>Data:</strong> {{ data_info.filename }} 
-                <span class="badge bg-primary ms-2">{{ "%.2f"|format(data_info.size / 1024 / 1024) }} MB</span>
-                <span class="ms-3"><i class="fas fa-clock me-1"></i>Updated: {{ data_info.modified }}</span>
-            </div>
-            <div>
-                <a href="{{ url_for('upload_page') }}" class="btn btn-sm btn-outline-primary me-2">
-                    <i class="fas fa-plus me-1"></i> Tambah Data
-                </a>
-                <button class="btn btn-sm btn-outline-secondary" onclick="refreshDashboard()">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh
-                </button>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Data Statistics Overview -->
-        {% if metrics %}
-        <div class="data-statistics">
-            <h6 class="mb-3">
-                <i class="fas fa-chart-bar me-2"></i>Statistik Data Terkini
-            </h6>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="stat-item">
-                        <h4>{{ metrics.total_reviews }}</h4>
-                        <small>Total Reviews</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-item">
-                        <h4>{{ metrics.wisata_metrics|length }}</h4>
-                        <small>Tempat Wisata</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-item">
-                        <h4>{{ "%.2f"|format(metrics.overall_satisfaction) }}</h4>
-                        <small>Rating Rata-rata</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-item">
-                        <h4>{{ "%.0f"|format(metrics.avg_review_length) }}</h4>
-                        <small>Panjang Review Rata-rata</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Main Metrics Cards -->
+        <h2 class="text-center mb-4">
+            <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+            Dashboard Kepuasan Wisatawan
+        </h2>
+
+        <!-- Statistics Cards -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="metric-card primary position-relative">
-                    <i class="fas fa-star icon"></i>
-                    <p>Kepuasan Overall</p>
-                    <h2>{{ "%.2f"|format(metrics.overall_satisfaction) }}/5</h2>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar bg-white" role="progressbar" 
-                             style="width: {{ (metrics.overall_satisfaction / 5 * 100)|round }}%"></div>
-                    </div>
+                <div class="stat-card">
+                    <i class="fas fa-comments fa-2x mb-3"></i>
+                    <div class="stat-number">{{ stats.total_reviews }}</div>
+                    <h6>Total Reviews</h6>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="metric-card info position-relative">
-                    <i class="fas fa-comments icon"></i>
-                    <p>Total Review</p>
-                    <h2>{{ "{:,}".format(metrics.total_reviews) }}</h2>
-                    <small class="opacity-75">
-                        <i class="fas fa-chart-line me-1"></i>Data Terkumpul
-                    </small>
+                <div class="stat-card">
+                    <i class="fas fa-star fa-2x mb-3"></i>
+                    <div class="stat-number">{{ stats.avg_rating }}</div>
+                    <h6>Rating Rata-rata</h6>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="metric-card success position-relative">
-                    <i class="fas fa-thumbs-up icon"></i>
-                    <p>Sentimen Positif</p>
-                    <h2>{{ "%.1f"|format(metrics.positive_percentage) }}%</h2>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar bg-white" role="progressbar" 
-                             style="width: {{ metrics.positive_percentage|round }}%"></div>
-                    </div>
+                <div class="stat-card">
+                    <i class="fas fa-thumbs-up fa-2x mb-3"></i>
+                    <div class="stat-number">{{ stats.satisfaction_rate }}%</div>
+                    <h6>Tingkat Kepuasan</h6>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="metric-card danger position-relative">
-                    <i class="fas fa-thumbs-down icon"></i>
-                    <p>Sentimen Negatif</p>
-                    <h2>{{ "%.1f"|format(metrics.negative_percentage) }}%</h2>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar bg-white" role="progressbar" 
-                             style="width: {{ metrics.negative_percentage|round }}%"></div>
-                    </div>
+                <div class="stat-card">
+                    <i class="fas fa-map-marker-alt fa-2x mb-3"></i>
+                    <div class="stat-number" style="font-size: 1.5em;">{{ stats.top_destination }}</div>
+                    <h6>Top Destinasi</h6>
                 </div>
             </div>
         </div>
-        
+
         <!-- Charts Row 1 -->
         <div class="row">
             <div class="col-md-6">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h5>
-                            <i class="fas fa-chart-bar me-2 text-primary"></i>
-                            Distribusi Rating
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Distribusi Rating
                         </h5>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body">
                         <div id="ratingChart" class="chart-container"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h5>
-                            <i class="fas fa-chart-pie me-2 text-success"></i>
-                            Distribusi Sentimen
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-smile me-2"></i>Analisis Sentimen
                         </h5>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body">
                         <div id="sentimentChart" class="chart-container"></div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Charts Row 2 -->
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h5>
-                            <i class="fas fa-trophy me-2 text-warning"></i>
-                            Top 10 Wisata berdasarkan Rating
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>Top 10 Destinasi
                         </h5>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body">
                         <div id="wisataChart" class="chart-container"></div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Charts Row 3 -->
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h5>
-                            <i class="fas fa-calendar-alt me-2 text-info"></i>
-                            Analisis Sentimen berdasarkan Waktu Kunjungan
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>Waktu Kunjungan
                         </h5>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body">
                         <div id="visitTimeChart" class="chart-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Additional Statistics -->
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="additional-stats">
-                    <h5 class="mb-4">
-                        <i class="fas fa-chart-line me-2"></i>Statistik Tambahan
-                    </h5>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="stat-box">
-                                <h4>{{ "%.1f"|format(metrics.neutral_percentage) }}%</h4>
-                                <p>Sentimen Netral</p>
-                                <div class="progress mt-2" style="height: 4px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" 
-                                         style="width: {{ metrics.neutral_percentage|round }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box">
-                                <h4>{{ "%.0f"|format(metrics.avg_review_length) }}</h4>
-                                <p>Panjang Review Rata-rata</p>
-                                <small class="text-muted">(karakter)</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box">
-                                <h4>{{ metrics.wisata_metrics|length }}</h4>
-                                <p>Total Destinasi Wisata</p>
-                                <small class="text-muted">yang tercatat</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box">
-                                {% set highest_rated = metrics.wisata_metrics.items() | selectattr('1.total_reviews', 'ge', 50) | sort(attribute='1.avg_rating', reverse=true) | first %}
-                                {% if highest_rated %}
-                                    <h4>{{ "%.2f"|format(highest_rated[1].avg_rating) }}/5</h4>
-                                    <p>Rating Tertinggi</p>
-                                    <small class="text-muted">{{ highest_rated[0][:20] }}{{ '...' if highest_rated[0]|length > 20 }}</small>
-                                {% else %}
-                                    <h4>-</h4>
-                                    <p>Rating Tertinggi</p>
-                                    <small class="text-muted">Tidak tersedia</small>
-                                {% endif %}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="row mt-4 mb-5">
-            <div class="col-md-12">
+        <div class="row mt-4">
+            <div class="col-12">
                 <div class="card">
-                    <div class="card-header bg-light">
+                    <div class="card-header bg-dark text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-bolt me-2 text-primary"></i>
-                            Aksi Cepat
+                            <i class="fas fa-rocket me-2"></i>Quick Actions
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
+                        <div class="row text-center">
                             <div class="col-md-4">
-                                <a href="{{ url_for('analysis') }}" class="btn btn-outline-primary w-100 mb-2">
-                                    <i class="fas fa-search me-2"></i>Analisis Mendalam
+                                <a href="/analysis" class="btn btn-primary btn-lg w-100 mb-2">
+                                    <i class="fas fa-analytics me-2"></i>
+                                    Analisis Mendalam
                                 </a>
+                                <p class="text-muted">Lihat analisis detail dan insights</p>
                             </div>
                             <div class="col-md-4">
-                                <a href="{{ url_for('upload_page') }}" class="btn btn-outline-success w-100 mb-2">
-                                    <i class="fas fa-plus me-2"></i>Tambah Data Baru
+                                <a href="/upload" class="btn btn-success btn-lg w-100 mb-2">
+                                    <i class="fas fa-upload me-2"></i>
+                                    Upload Data Baru
                                 </a>
+                                <p class="text-muted">Upload file Excel atau CSV</p>
                             </div>
                             <div class="col-md-4">
-                                <a href="{{ url_for('download_current_data') }}" class="btn btn-outline-info w-100 mb-2">
-                                    <i class="fas fa-download me-2"></i>Export Data
-                                </a>
+                                <button class="btn btn-info btn-lg w-100 mb-2" onclick="refreshData()">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    Refresh Data
+                                </button>
+                                <p class="text-muted">Perbarui visualisasi data</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-    <!-- Floating Refresh Button -->
-    <button class="btn btn-primary refresh-btn" onclick="refreshDashboard()" title="Refresh Dashboard">
-        <i class="fas fa-sync-alt"></i>
-    </button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Global variables
-        let chartsLoaded = false;
+        // Chart data from Flask
+        const chartData = {{ chart_data|tojson }};
 
-        // Show loading overlay
-        function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
+        // Rating Distribution Chart
+        if (chartData.rating_distribution) {
+            const ratingData = [{
+                x: chartData.rating_distribution.labels,
+                y: chartData.rating_distribution.data,
+                type: 'bar',
+                marker: {
+                    color: ['#dc3545', '#fd7e14', '#ffc107', '#28a745', '#20c997']
+                }
+            }];
+
+            const ratingLayout = {
+                title: 'Distribusi Rating',
+                xaxis: { title: 'Rating' },
+                yaxis: { title: 'Jumlah Review' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('ratingChart', ratingData, ratingLayout, {responsive: true});
         }
 
-        // Hide loading overlay
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
+        // Sentiment Chart
+        if (chartData.sentiment_distribution) {
+            const sentimentData = [{
+                labels: chartData.sentiment_distribution.labels,
+                values: chartData.sentiment_distribution.data,
+                type: 'pie',
+                marker: {
+                    colors: ['#28a745', '#dc3545', '#ffc107']
+                }
+            }];
+
+            const sentimentLayout = {
+                title: 'Distribusi Sentimen',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('sentimentChart', sentimentData, sentimentLayout, {responsive: true});
         }
 
-        // Refresh dashboard
-        function refreshDashboard() {
-            showLoading();
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+        // Top Destinations Chart
+        if (chartData.top_destinations) {
+            const wisataData = [{
+                x: chartData.top_destinations.data,
+                y: chartData.top_destinations.labels,
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: '#667eea'
+                }
+            }];
+
+            const wisataLayout = {
+                title: 'Top 10 Destinasi Wisata',
+                xaxis: { title: 'Jumlah Review' },
+                yaxis: { title: 'Destinasi' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('wisataChart', wisataData, wisataLayout, {responsive: true});
         }
 
-// Generate report function
-async function generateReport() {
-    const reportBtn = document.querySelector('button[onclick="generateReport()"]');
-    const originalText = reportBtn.innerHTML;
-    
-    try {
-        // Show loading state
-        reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating Report...';
-        reportBtn.disabled = true;
-        
-        // Show preview modal first
-        const previewData = await fetch('/preview_report').then(r => r.json());
-        
-        if (previewData.error) {
-            throw new Error(previewData.error);
+        // Visit Time Chart
+        if (chartData.visit_time_distribution) {
+            const visitTimeData = [{
+                labels: chartData.visit_time_distribution.labels,
+                values: chartData.visit_time_distribution.data,
+                type: 'pie',
+                marker: {
+                    colors: ['#ff6b6b', '#4facfe', '#f59e0b', '#10b981']
+                }
+            }];
+
+            const visitTimeLayout = {
+                title: 'Distribusi Waktu Kunjungan',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('visitTimeChart', visitTimeData, visitTimeLayout, {responsive: true});
         }
-        
-        // Show confirmation modal
-        const confirmed = await showReportPreview(previewData);
-        
-        if (confirmed) {
-            // Generate and download report
-            window.location.href = '/generate_report';
-            
-            // Show success message
-            setTimeout(() => {
-                showAlert('Report berhasil di-generate dan akan segera didownload!', 'success');
-            }, 1000);
+
+        // Refresh function
+        function refreshData() {
+            location.reload();
         }
-        
-    } catch (error) {
-        console.error('Error generating report:', error);
-        showAlert('Error generating report: ' + error.message, 'error');
-    } finally {
-        // Restore button
-        reportBtn.innerHTML = originalText;
-        reportBtn.disabled = false;
-    }
-}
-
-// Show report preview modal
-function showReportPreview(data) {
-    return new Promise((resolve) => {
-        // Create modal HTML
-        const modalHTML = `
-            <div class="modal fade" id="reportPreviewModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">
-                                <i class="fas fa-file-pdf me-2"></i>Preview Report
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center">
-                                            <h4 class="text-primary">${data.total_reviews.toLocaleString()}</h4>
-                                            <p class="mb-0">Total Reviews</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center">
-                                            <h4 class="text-success">${data.overall_satisfaction}/5.0</h4>
-                                            <p class="mb-0">Overall Satisfaction</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <div class="text-center">
-                                        <h5 class="text-success">${data.positive_percentage}%</h5>
-                                        <small>Positive Sentiment</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="text-center">
-                                        <h5 class="text-danger">${data.negative_percentage}%</h5>
-                                        <small>Negative Sentiment</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="text-center">
-                                        <h5 class="text-info">${data.total_destinations}</h5>
-                                        <small>Destinations</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <h6>Top 5 Destinations:</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Destination</th>
-                                            <th>Rating</th>
-                                            <th>Reviews</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.top_destinations.map(dest => `
-                                            <tr>
-                                                <td>${dest.name}</td>
-                                                <td><span class="badge bg-success">${dest.rating}/5.0</span></td>
-                                                <td>${dest.reviews}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Report akan berisi analisis lengkap, grafik, ranking destinasi, dan rekomendasi perbaikan.
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="confirmGenerate">
-                                <i class="fas fa-download me-2"></i>Generate & Download
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Add modal to page
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('reportPreviewModal'));
-        modal.show();
-        
-        // Handle confirm button
-        document.getElementById('confirmGenerate').addEventListener('click', () => {
-            modal.hide();
-            resolve(true);
-        });
-        
-        // Handle modal close
-        document.getElementById('reportPreviewModal').addEventListener('hidden.bs.modal', () => {
-            document.getElementById('reportPreviewModal').remove();
-            resolve(false);
-        });
-    });
-}
-
-// Show alert function
-function showAlert(message, type) {
-    const alertHTML = `
-        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
-             style="top: 100px; right: 20px; z-index: 1050; min-width: 300px;">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', alertHTML);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        const alert = document.querySelector('.alert');
-        if (alert) {
-            alert.remove();
-        }
-    }, 5000);
-}
-
-        // Chart rendering with error handling
-        document.addEventListener('DOMContentLoaded', function() {
-            showLoading();
-            
-            try {
-                let chartsToLoad = 0;
-                let chartsLoaded = 0;
-
-                function checkAllChartsLoaded() {
-                    chartsLoaded++;
-                    if (chartsLoaded >= chartsToLoad) {
-                        hideLoading();
-                    }
-                }
-
-                // Rating Distribution Chart
-                {% if charts and charts.rating_dist %}
-                chartsToLoad++;
-                var ratingData = {{ charts.rating_dist|safe }};
-                if (ratingData && ratingData.data) {
-                    // Enhance chart styling
-                    ratingData.layout.plot_bgcolor = 'rgba(0,0,0,0)';
-                    ratingData.layout.paper_bgcolor = 'rgba(0,0,0,0)';
-                    ratingData.layout.font = {family: 'Segoe UI, sans-serif', size: 12};
-                    ratingData.layout.margin = {l: 50, r: 50, t: 50, b: 50};
-                    
-                    Plotly.newPlot('ratingChart', ratingData.data, ratingData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    }).then(checkAllChartsLoaded);
-                } else {
-                    checkAllChartsLoaded();
-                }
-                {% endif %}
-
-                // Sentiment Distribution Chart
-                {% if charts and charts.sentiment_dist %}
-                chartsToLoad++;
-                var sentimentData = {{ charts.sentiment_dist|safe }};
-                if (sentimentData && sentimentData.data) {
-                    // Enhance chart styling
-                    sentimentData.layout.plot_bgcolor = 'rgba(0,0,0,0)';
-                    sentimentData.layout.paper_bgcolor = 'rgba(0,0,0,0)';
-                    sentimentData.layout.font = {family: 'Segoe UI, sans-serif', size: 12};
-                    sentimentData.layout.margin = {l: 50, r: 50, t: 50, b: 50};
-                    
-                    Plotly.newPlot('sentimentChart', sentimentData.data, sentimentData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    }).then(checkAllChartsLoaded);
-                } else {
-                    checkAllChartsLoaded();
-                }
-                {% endif %}
-
-                // Wisata Performance Chart
-                {% if charts and charts.wisata_performance %}
-                chartsToLoad++;
-                var wisataData = {{ charts.wisata_performance|safe }};
-                if (wisataData && wisataData.data) {
-                    // Enhance chart styling
-                    wisataData.layout.plot_bgcolor = 'rgba(0,0,0,0)';
-                    wisataData.layout.paper_bgcolor = 'rgba(0,0,0,0)';
-                    wisataData.layout.font = {family: 'Segoe UI, sans-serif', size: 12};
-                    wisataData.layout.margin = {l: 200, r: 50, t: 50, b: 50};
-                    
-                    Plotly.newPlot('wisataChart', wisataData.data, wisataData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    }).then(checkAllChartsLoaded);
-                } else {
-                    checkAllChartsLoaded();
-                }
-                {% endif %}
-
-                // Visit Time Analysis Chart
-                {% if charts and charts.visit_time_analysis %}
-                chartsToLoad++;
-                var visitTimeData = {{ charts.visit_time_analysis|safe }};
-                if (visitTimeData && visitTimeData.data) {
-                    // Enhance chart styling
-                    visitTimeData.layout.plot_bgcolor = 'rgba(0,0,0,0)';
-                    visitTimeData.layout.paper_bgcolor = 'rgba(0,0,0,0)';
-                    visitTimeData.layout.font = {family: 'Segoe UI, sans-serif', size: 12};
-                    visitTimeData.layout.margin = {l: 50, r: 50, t: 50, b: 100};
-                    
-                    Plotly.newPlot('visitTimeChart', visitTimeData.data, visitTimeData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    }).then(checkAllChartsLoaded);
-                } else {
-                    checkAllChartsLoaded();
-                }
-                {% endif %}
-
-                // If no charts to load, hide loading immediately
-                if (chartsToLoad === 0) {
-                    hideLoading();
-                }
-
-            } catch (error) {
-                console.error('Error rendering charts:', error);
-                hideLoading();
-                
-                // Show error message
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-warning alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Beberapa chart gagal dimuat. Silakan refresh halaman.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
-            }
-        });
-
-        // Handle window resize for responsive charts
-        window.addEventListener('resize', function() {
-            if (chartsLoaded) {
-                setTimeout(() => {
-                    Plotly.Plots.resize('ratingChart');
-                    Plotly.Plots.resize('sentimentChart');
-                    Plotly.Plots.resize('wisataChart');
-                    Plotly.Plots.resize('visitTimeChart');
-                }, 100);
-            }
-        });
-
-        // Auto-refresh dashboard every 5 minutes (optional)
-        // setInterval(refreshDashboard, 300000);
-
-        // Add smooth scrolling for internal links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-
-        // Add tooltips to metric cards
-        document.addEventListener('DOMContentLoaded', function() {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        });
     </script>
 </body>
 </html>
