@@ -961,21 +961,15 @@ def get_visitor_insights():
         print(f"Error in visitor insights: {e}")
         return {}
 
-# Ganti bagian akhir app.py dengan ini:
 if __name__ == '__main__':
     # Create necessary directories
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'backups'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'temp'), exist_ok=True)
     
-    # For local development
-    if not os.environ.get('VERCEL'):
-        # Initialize app on startup for local development
-        if initialize_app():
-            app.run(debug=True, host='0.0.0.0', port=5000)
-        else:
-            print("No data file found. Please upload data through the web interface.")
-            app.run(debug=True, host='0.0.0.0', port=5000)
-
-# For Vercel deployment
-# Vercel will use this app instance
+    # Initialize app on startup
+    if initialize_app():
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        print("No data file found. Please upload data through the web interface.")
+        app.run(debug=True, host='0.0.0.0', port=5000)
