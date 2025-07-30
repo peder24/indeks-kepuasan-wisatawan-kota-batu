@@ -765,4 +765,5 @@ if __name__ == '__main__':
     # Try to initialize app on startup
     initialize_app()
     
+    # Railway deployment configuration
     app.run(debug=False, host='0.0.0.0', port=port)
