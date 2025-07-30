@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis - Indeks Kepuasan Wisatawan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f8f9fa; 
+        }
+        .card { 
+            border-radius: 15px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            margin-bottom: 20px;
+            border: none;
+        }
+        .navbar-brand { 
+            font-weight: bold; 
+        }
+        .priority-urgent {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .priority-high {
+            background-color: #fd7e14;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .priority-medium {
+            background-color: #ffc107;
+            color: dark;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .keyword-positive {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            display: inline-block;
+        }
+        .keyword-negative {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            display: inline-block;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 20px;
+        }
+        .analysis-section {
+            margin-bottom: 40px;
+        }
+        .chart-container {
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .wisata-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .wisata-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        .insight-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        /* Card header colors berdasarkan rating level */
+        .card-header.bg-excellent {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            color: white !important;
+        }
+        
+        .card-header.bg-very-good {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
+            color: white !important;
+        }
+        
+        .card-header.bg-good {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+            color: white !important;
+        }
+        
+        .card-header.bg-needs-improvement {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+            color: white !important;
+        }
+        
+        /* Stat card improvements dengan warna yang lebih menarik */
+        .stat-card-rating {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            color: white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card-rating::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        
+        .stat-card-rating:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+        }
+        
+        .stat-card-reviews {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card-reviews::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        
+        .stat-card-reviews:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(79, 172, 254, 0.4);
+        }
+        
+        /* Rating star animation */
+        .stat-card-rating .fas.fa-star {
+            animation: sparkle 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes sparkle {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        /* Comments icon animation */
+        .stat-card-reviews .fas.fa-comments {
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        /* Progress bar improvements */
+        .progress {
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .progress-bar {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-bar:hover {
+            filter: brightness(1.1);
+        }
+        
+        /* Card header improvements */
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        
+        /* Engagement badge styling */
+        .engagement-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 4px 8px;
+            font-size: 0.75em;
+        }
+        
+        /* Keyword badges */
+        .keyword-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin: 2px;
+            font-size: 0.8em;
+            transition: all 0.2s ease;
+        }
+        
+        .keyword-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Quick stats box */
+        .quick-stats-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        /* Tooltip custom styling */
+        .tooltip-inner {
+            background-color: #2c3e50;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.85em;
+        }
+
+        /* PERBAIKAN UNTUK PERSENTASE TABEL */
+        .complaint-table {
+            min-width: 100%;
+        }
+        
+        .complaint-table td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        
+        .complaint-progress {
+            min-width: 120px;
+            position: relative;
+        }
+        
+        .complaint-progress .progress {
+            height: 25px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        
+        .complaint-progress .progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            min-width: 40px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .complaint-progress .percentage-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            z-index: 10;
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .stat-card-rating, .stat-card-reviews {
+                margin-bottom: 15px;
+            }
+            
+            .wisata-card {
+                margin-bottom: 20px;
+            }
+            
+            .complaint-table {
+                font-size: 0.9em;
+            }
+            
+            .complaint-progress {
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-chart-line me-2"></i>Indeks Kepuasan Wisatawan
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+                <a class="nav-link active" href="/analysis">
+                    <i class="fas fa-analytics me-1"></i>Analisis
+                </a>
+                <a class="nav-link" href="/upload">
+                    <i class="fas fa-upload me-1"></i>Upload Data
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="text-center mb-5">
+            <i class="fas fa-analytics me-2 text-primary"></i>
+            <span class="fw-bold">Analisis Mendalam Kepuasan Wisatawan</span>
+        </h2>
+
+        <!-- Priority Recommendations Section -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                Rekomendasi Prioritas
+            </h3>
+            <div class="row">
+                {% if analysis_data.suggestions %}
+                    {% for suggestion in analysis_data.suggestions %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 {% if suggestion.priority == 'URGENT' %}border-danger{% elif suggestion.priority == 'HIGH' %}border-warning{% endif %}">
+                            <div class="card-header">
+                                <span class="priority-{{ suggestion.priority|lower }}">{{ suggestion.priority }}</span>
+                                <strong class="ms-2">{{ suggestion.wisata[:40] }}{% if suggestion.wisata|length > 40 %}...{% endif %}</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-danger mb-2"><strong>Issue:</strong> {{ suggestion.issue }}</p>
+                                <p class="mb-1"><strong>Rekomendasi:</strong> {{ suggestion.suggestion }}</p>
+                                <small class="text-muted">Impact: {{ suggestion.impact }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="success-box">
+                            <h5><i class="fas fa-check-circle me-2"></i>Excellent Performance!</h5>
+                            <p>Tidak ada rekomendasi urgent. Semua destinasi memiliki performa yang baik.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Complaint Analysis Section - PERBAIKAN TABEL -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-comments me-2 text-danger"></i>
+                Analisis Keluhan Utama
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                Top 15 Keluhan Wisatawan
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis_data.complaints %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover complaint-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40%;">Keluhan</th>
+                                            <th style="width: 15%; text-align: center;">Frekuensi</th>
+                                            <th style="width: 45%;">Persentase</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set total_complaints = analysis_data.complaints|sum(attribute='1') %}
+                                        {% for complaint, count in analysis_data.complaints %}
+                                        <tr>
+                                            <td class="fw-bold">{{ complaint|capitalize }}</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ count }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="complaint-progress position-relative">
+                                                    {% set percentage = (count/total_complaints*100) %}
+                                                    <div class="progress" style="height: 28px;">
+                                                        <div class="progress-bar bg-danger" 
+                                                             style="width: {{ percentage|round }}%; min-width: 45px;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="percentage-text">
+                                                        {{ "%.1f"|format(percentage) }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Summary Stats -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h6 class="text-danger mb-1">{{ total_complaints }}</h6>
+                                        <small class="text-muted">Total Keluhan</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6 class="text-danger mb-1">{{ analysis_data.complaints|length }}</h6>
+                                        <small class="text-muted">Jenis Keluhan</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-smile fa-3x text-success mb-3"></i>
+                                <p class="text-muted">Tidak ada keluhan signifikan yang terdeteksi.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Insight Keluhan
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis_data.complaints %}
+                                {% set top_complaint = analysis_data.complaints[0] %}
+                                <div class="insight-box">
+                                    <h6><i class="fas fa-chart-line me-2"></i>Keluhan Terbanyak:</h6>
+                                    <p class="mb-2"><strong>"{{ top_complaint[0]|capitalize }}"</strong></p>
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ top_complaint[1] }} mentions</span>
+                                        <span class="badge bg-danger">{{ "%.1f"|format(top_complaint[1]/total_complaints*100) }}%</span>
+                                    </div>
+                                </div>
+                                
+                                {% if 'mahal' in analysis_data.complaints|map(attribute='0')|list %}
+                                <div class="warning-box">
+                                    <h6><i class="fas fa-dollar-sign me-2"></i>Perhatian Harga:</h6>
+                                    <p class="mb-0">Keluhan terkait harga terdeteksi. Pertimbangkan review struktur harga atau komunikasi value proposition.</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if 'kotor' in analysis_data.complaints|map(attribute='0')|list or 'jorok' in analysis_data.complaints|map(attribute='0')|list %}
+                                <div class="warning-box">
+                                    <h6><i class="fas fa-broom me-2"></i>Perhatian Kebersihan:</h6>
+                                    <p class="mb-0">Keluhan kebersihan terdeteksi. Tingkatkan protokol kebersihan dan maintenance.</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if 'pelayanan' in analysis_data.complaints|map(attribute='0')|list or 'service' in analysis_data.complaints|map(attribute='0')|list %}
+                                <div class="warning-box">
+                                    <h6><i class="fas fa-user-tie me-2"></i>Perhatian Pelayanan:</h6>
+                                    <p class="mb-0">Keluhan pelayanan terdeteksi. Tingkatkan training staff dan standar layanan.</p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Complaint Trend Analysis -->
+                                <div class="insight-box">
+                                    <h6><i class="fas fa-trending-up me-2"></i>Analisis Trend:</h6>
+                                    {% set top_3_complaints = analysis_data.complaints[:3] %}
+                                    <p class="mb-0">Top 3 keluhan menyumbang 
+                                        <strong>{{ "%.1f"|format((top_3_complaints|sum(attribute='1'))/total_complaints*100) }}%</strong> 
+                                        dari total keluhan.</p>
+                                </div>
+                            {% else %}
+                                <div class="success-box">
+                                    <h6><i class="fas fa-thumbs-up me-2"></i>Status Baik</h6>
+                                    <p class="mb-0">Tidak ada pola keluhan yang signifikan.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaint Categories Analysis -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-exclamation-circle me-2 text-warning"></i>
+                Kategori Keluhan
+            </h3>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Distribusi Keluhan per Kategori
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if analysis_data.complaint_details.complaint_categories %}
+                            <div class="row">
+                                {% for category, count in analysis_data.complaint_details.complaint_categories.items() %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-warning h-100">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                                            <h4 class="text-warning fw-bold">{{ count }}</h4>
+                                            <p class="mb-0 fw-bold">{{ category|capitalize }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis_data.complaint_details.top_complained_wisata %}
+                            <hr>
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Destinasi dengan Keluhan Terbanyak:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Destinasi</th>
+                                            <th>Total Keluhan</th>
+                                            <th>Issue Utama</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for wisata, data in analysis_data.complaint_details.top_complained_wisata.items() %}
+                                        <tr>
+                                            <td class="fw-bold">{{ wisata[:40] }}{% if wisata|length > 40 %}...{% endif %}</td>
+                                            <td><span class="badge bg-danger">{{ data.total_complaints }}</span></td>
+                                            <td>
+                                                {% for issue, count in data.main_issues %}
+                                                    <span class="badge bg-warning text-dark me-1">{{ issue }} ({{ count }})</span>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentiment Deep Analysis -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-smile me-2 text-success"></i>
+                Analisis Sentimen Mendalam
+            </h3>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-thumbs-up me-2 text-success"></i>Keywords Positif</h5>
+                                    <div class="mb-3">
+                                        {% if analysis_data.keyword_analysis.positive_keywords %}
+                                            {% for keyword, count in analysis_data.keyword_analysis.positive_keywords[:10] %}
+                                                <span class="keyword-positive">{{ keyword }} ({{ count }})</span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-thumbs-down me-2 text-danger"></i>Keywords Negatif</h5>
+                                    <div class="mb-3">
+                                        {% if analysis_data.keyword_analysis.negative_keywords %}
+                                            {% for keyword, count in analysis_data.keyword_analysis.negative_keywords[:10] %}
+                                                <span class="keyword-negative">{{ keyword }} ({{ count }})</span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sentiment by Rating Chart -->
+                            <div id="sentimentByRatingChart" class="chart-container mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time-based Analysis -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-clock me-2 text-info"></i>
+                Analisis Berdasarkan Waktu Kunjungan
+            </h3>
+            <div class="row">
+                {% for visit_time, data in analysis_data.time_analysis.items() %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                {{ visit_time }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-card mb-3">
+                                <h3 class="fw-bold">{{ "%.2f"|format(data.avg_rating) }}/5</h3>
+                                <p class="mb-0">Rating Rata-rata</p>
+                            </div>
+                            <p><strong>Total Reviews:</strong> <span class="badge bg-info">{{ data.total_reviews }}</span></p>
+                            <p><strong>Sentimen:</strong></p>
+                            <div class="progress mb-2" style="height: 25px;">
+                                {% set total_sentiment = data.sentiment_distribution.positive + data.sentiment_distribution.negative + data.sentiment_distribution.neutral %}
+                                {% if total_sentiment > 0 %}
+                                    {% set pos_pct = (data.sentiment_distribution.positive/total_sentiment*100) %}
+                                    {% set neu_pct = (data.sentiment_distribution.neutral/total_sentiment*100) %}
+                                    {% set neg_pct = (data.sentiment_distribution.negative/total_sentiment*100) %}
+                                    
+                                    <div class="progress-bar bg-success" style="width: {{ pos_pct|round }}%">
+                                        {% if pos_pct > 15 %}
+                                            <small class="fw-bold">Positif {{ pos_pct|round }}%</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="progress-bar bg-warning" style="width: {{ neu_pct|round }}%">
+                                        {% if neu_pct > 15 %}
+                                            <small class="fw-bold">Netral {{ neu_pct|round }}%</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="progress-bar bg-danger" style="width: {{ neg_pct|round }}%">
+                                        {% if neg_pct > 15 %}
+                                            <small class="fw-bold">Negatif {{ neg_pct|round }}%</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-4">
+                                    <small class="text-success fw-bold">{{ pos_pct|round }}%</small>
+                                    <br><small class="text-muted">Positif</small>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-warning fw-bold">{{ neu_pct|round }}%</small>
+                                    <br><small class="text-muted">Netral</small>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-danger fw-bold">{{ neg_pct|round }}%</small>
+                                    <br><small class="text-muted">Negatif</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top Wisata Deep Analysis -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-trophy me-2 text-warning"></i>
+                Analisis Detail Top Destinasi
+            </h3>
+            <div class="row">
+                {% for wisata_name, wisata_data in analysis_data.wisata_details.items() %}
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card wisata-card h-100">
+                        {% if wisata_data.satisfaction_level == 'Excellent' %}
+                            {% set header_class = 'bg-excellent' %}
+                        {% elif wisata_data.satisfaction_level == 'Very Good' %}
+                            {% set header_class = 'bg-very-good' %}
+                        {% elif wisata_data.satisfaction_level == 'Good' %}
+                            {% set header_class = 'bg-good' %}
+                        {% else %}
+                            {% set header_class = 'bg-needs-improvement' %}
+                        {% endif %}
+                        
+                        <div class="card-header {{ header_class }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    {{ wisata_name[:35] }}{% if wisata_name|length > 35 %}...{% endif %}
+                                </h5>
+                                <span class="badge bg-light text-dark px-3 py-2 fw-bold">{{ wisata_data.satisfaction_level }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Rating dan Total Reviews -->
+                            <div class="row mb-4">
+                                <div class="col-6">
+                                    <div class="stat-card-rating p-3 text-center position-relative">
+                                        <i class="fas fa-star position-absolute" style="top: 10px; right: 15px; opacity: 0.3; font-size: 1.5em;"></i>
+                                        <h4 class="mb-1 fw-bold">{{ "%.2f"|format(wisata_data.avg_rating) }}/5</h4>
+                                        <small class="opacity-90 fw-bold">
+                                            <i class="fas fa-star me-1"></i>Rating Rata-rata
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card-reviews p-3 text-center position-relative">
+                                        <i class="fas fa-comments position-absolute" style="top: 10px; right: 15px; opacity: 0.3; font-size: 1.5em;"></i>
+                                        <h4 class="mb-1 fw-bold">{{ wisata_data.total_reviews }}</h4>
+                                        <small class="opacity-90 fw-bold">
+                                            <i class="fas fa-comments me-1"></i>Total Reviews
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Rating Distribution -->
+                            <h6 class="mb-3 fw-bold">
+                                <i class="fas fa-chart-bar me-2 text-primary"></i>Rating Distribution:
+                            </h6>
+                            {% for rating in range(5, 0, -1) %}
+                                {% set count = wisata_data.rating_distribution.get(rating, 0) %}
+                                {% set percentage = (count/wisata_data.total_reviews*100) if wisata_data.total_reviews > 0 else 0 %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2 fw-bold text-warning" style="min-width: 35px;">{{ rating }}★</span>
+                                    <div class="progress flex-grow-1 me-2" style="height: 24px;">
+                                        <div class="progress-bar 
+                                            {% if rating >= 4 %}bg-success
+                                            {% elif rating >= 3 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                             style="width: {{ percentage|round }}%">
+                                            {% if percentage > 15 %}
+                                                <small class="fw-bold">{{ "%.1f"|format(percentage) }}%</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="text-muted fw-bold" style="min-width: 60px;">{{ count }} ({{ "%.1f"|format(percentage) }}%)</span>
+                                </div>
+                            {% endfor %}
+                            
+                            <hr class="my-4">
+                            
+                            <!-- Key Metrics -->
+                            <div class="row text-center g-0 mb-4">
+                                <div class="col-4">
+                                    <div class="border-end pe-2">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-thumbs-up text-success mb-1"></i>
+                                            <h6 class="text-success mb-1 fw-bold">{{ "%.1f"|format(wisata_data.positive_ratio) }}%</h6>
+                                            <small class="text-muted fw-bold">Positif</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border-end pe-2">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-thumbs-down text-danger mb-1"></i>
+                                            <h6 class="text-danger mb-1 fw-bold">{{ "%.1f"|format(wisata_data.negative_ratio) }}%</h6>
+                                            <small class="text-muted fw-bold">Negatif</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-chart-line text-primary mb-1" 
+                                               data-bs-toggle="tooltip" 
+                                               data-bs-placement="top" 
+                                               title="Engagement mengukur detail review pengunjung. High: >200 karakter (review detail dan informatif), Medium: 100-200 karakter (cukup informatif), Low: <100 karakter (review singkat). Engagement tinggi menunjukkan pengunjung terkesan dan termotivasi berbagi pengalaman detail."></i>
+                                            <h6 class="text-primary mb-1 fw-bold">{{ wisata_data.engagement_level }}</h6>
+                                            <small class="text-muted fw-bold">Engagement</small>
+                                            <div class="mt-1">
+                                                <span class="engagement-badge">
+                                                    {{ "%.0f"|format(wisata_data.avg_review_length) }} karakter
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- Top Keywords -->
+                            <h6 class="mb-3 fw-bold">
+                                <i class="fas fa-tags me-2 text-secondary"></i>Keywords Populer:
+                            </h6>
+                            <div class="mb-4">
+                                {% for keyword, count in wisata_data.top_keywords.items() %}
+                                    {% if loop.index <= 6 %}
+                                        <span class="keyword-badge">
+                                            {{ keyword }} <small>({{ count }})</small>
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Quick Stats -->
+                            <div class="quick-stats-box">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-star text-warning me-1"></i> 
+                                            <strong>Rating tersering:</strong>
+                                        </small>
+                                        <span class="badge bg-warning text-dark">{{ wisata_data.most_common_rating }}★</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-comment me-1"></i> 
+                                            <strong>Rata-rata review:</strong>
+                                        </small>
+                                        <span class="badge bg-info">{{ "%.0f"|format(wisata_data.avg_review_length) }} karakter</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Visitor Insights -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-users me-2 text-secondary"></i>
+                Visitor Insights
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Review Engagement Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <h6><i class="fas fa-ruler me-2"></i>Review Length Distribution:</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-circle text-danger me-2"></i>
+                                    <strong>Short reviews (&lt;50 chars):</strong> 
+                                    <span class="badge bg-danger">{{ analysis_data.visitor_insights.review_length_analysis.short_reviews }}</span>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-circle text-warning me-2"></i>
+                                    <strong>Medium reviews (50-150 chars):</strong> 
+                                    <span class="badge bg-warning">{{ analysis_data.visitor_insights.review_length_analysis.medium_reviews }}</span>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-circle text-success me-2"></i>
+                                    <strong>Long reviews (&gt;150 chars):</strong> 
+                                    <span class="badge bg-success">{{ analysis_data.visitor_insights.review_length_analysis.long_reviews }}</span>
+                                </li>
+                            </ul>
+                            
+                            {% if analysis_data.visitor_insights.length_rating_correlation %}
+                            <div class="insight-box">
+                                <h6><i class="fas fa-lightbulb me-2"></i>Correlation Insight:</h6>
+                                <p class="mb-0">
+                                    {% if analysis_data.visitor_insights.length_rating_correlation > 0.3 %}
+                                        <i class="fas fa-arrow-up text-success me-1"></i>
+                                        Pengunjung yang puas cenderung menulis review lebih panjang
+                                    {% elif analysis_data.visitor_insights.length_rating_correlation < -0.3 %}
+                                        <i class="fas fa-arrow-down text-danger me-1"></i>
+                                        Pengunjung yang tidak puas cenderung menulis review lebih panjang
+                                    {% else %}
+                                        <i class="fas fa-minus text-warning me-1"></i>
+                                        Tidak ada korelasi signifikan antara panjang review dan rating
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar me-2"></i>
+                                Visit Patterns
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="visitPatternChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Methodology Section -->
+        <div class="analysis-section">
+            <h3 class="mb-4">
+                <i class="fas fa-info-circle me-2 text-info"></i>
+                Metodologi Analisis
+            </h3>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-book me-2"></i>
+                                Penjelasan Metrik dan Kategori
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-medal me-2"></i>Satisfaction Level:</h6>
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><span class="badge bg-success me-2">Excellent</span> Rating ≥ 4.5</li>
+                                        <li class="mb-2"><span class="badge bg-info me-2">Very Good</span> Rating 4.0 - 4.4</li>
+                                        <li class="mb-2"><span class="badge bg-warning me-2">Good</span> Rating 3.5 - 3.9</li>
+                                        <li class="mb-2"><span class="badge bg-danger me-2">Needs Improvement</span> Rating < 3.5</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-chart-line me-2"></i>Engagement Level:</h6>
+                                    <ul class="list-unstyled">
+                                        <li class="mb-3">
+                                            <span class="badge bg-success me-2">High</span>
+                                            Review rata-rata > 200 karakter
+                                            <small class="text-muted d-block">Pengunjung menulis review yang detail dan informatif</small>
+                                        </li>
+                                        <li class="mb-3">
+                                            <span class="badge bg-warning me-2">Medium</span>
+                                            Review rata-rata 100-200 karakter
+                                            <small class="text-muted d-block">Pengunjung memberikan review dengan informasi cukup</small>
+                                        </li>
+                                        <li class="mb-3">
+                                            <span class="badge bg-danger me-2">Low</span>
+                                            Review rata-rata < 100 karakter
+                                            <small class="text-muted d-block">Pengunjung cenderung menulis review singkat</small>
+                                        </li>
+                                    </ul>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        <strong>Insight:</strong> Engagement tinggi menunjukkan pengunjung memiliki pengalaman yang berkesan (positif atau negatif) sehingga termotivasi menulis review detail.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6><i class="fas fa-brain me-2"></i>Analisis Sentimen:</h6>
+                                    <p class="mb-2">Sentimen dihitung berdasarkan:</p>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul>
+                                                <li><strong>Machine Learning Model:</strong> Menggunakan Random Forest Classifier</li>
+                                                <li><strong>Keyword Analysis:</strong> Deteksi kata-kata positif dan negatif dalam bahasa Indonesia</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul>
+                                                <li><strong>Context Analysis:</strong> Mempertimbangkan konteks penggunaan kata</li>
+                                                <li><strong>TextBlob Integration:</strong> Sebagai validasi tambahan analisis sentimen</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Aktivasi tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
+        // Sentiment by Rating Chart
+        {% if analysis_data.sentiment_analysis.by_rating %}
+        var sentimentByRatingData = [];
+        var ratings = [1, 2, 3, 4, 5];
+        var sentiments = ['positive', 'negative', 'neutral'];
+        var colors = {'positive': '#28a745', 'negative': '#dc3545', 'neutral': '#ffc107'};
+        
+        sentiments.forEach(function(sentiment) {
+            var yData = ratings.map(function(rating) {
+                var ratingData = {{ analysis_data.sentiment_analysis.by_rating|tojson }};
+                return ratingData[rating] && ratingData[rating][sentiment] ? ratingData[rating][sentiment] : 0;
+            });
+            
+            sentimentByRatingData.push({
+                x: ratings,
+                y: yData,
+                name: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+                type: 'bar',
+                marker: {color: colors[sentiment]}
+            });
+        });
+        
+        var sentimentLayout = {
+            title: 'Distribusi Sentimen per Rating',
+            xaxis: {title: 'Rating'},
+            yaxis: {title: 'Jumlah Review'},
+            barmode: 'stack',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+        
+        Plotly.newPlot('sentimentByRatingChart', sentimentByRatingData, sentimentLayout, {responsive: true});
+        {% endif %}
+        
+        // Visit Pattern Chart
+        {% if analysis_data.visitor_insights.visit_patterns %}
+        var visitData = {{ analysis_data.visitor_insights.visit_patterns|tojson }};
+        var visitPatternData = [{
+            labels: Object.keys(visitData),
+            values: Object.values(visitData),
+            type: 'pie',
+            marker: {
+                colors: ['#ff6b6b', '#4facfe', '#f59e0b', '#10b981']
+            },
+            textinfo: 'label+percent',
+            textposition: 'outside'
+        }];
+        
+        var visitLayout = {
+            title: 'Distribusi Waktu Kunjungan',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+        
+        Plotly.newPlot('visitPatternChart', visitPatternData, visitLayout, {responsive: true});
+        {% endif %}
+    </script>
+</body>
+</html>
