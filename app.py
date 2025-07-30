@@ -10,13 +10,18 @@ from werkzeug.utils import secure_filename
 import shutil
 from datetime import datetime
 import tempfile
-from collections import Counter  # TAMBAHKAN INI
+from collections import Counter
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Ganti dengan secret key yang aman
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-for-development')
 
-# Configuration
-UPLOAD_FOLDER = 'data'
+# Configuration for Vercel
+UPLOAD_FOLDER = '/tmp/data' if os.environ.get('VERCEL') else 'data'
 ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -45,6 +50,60 @@ def get_data_info():
             'modified': datetime.fromtimestamp(file_stats.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
         }
     return None
+
+def create_sample_data():
+    """Create sample data for initial deployment"""
+    sample_data = {
+        'reviewer_name': [
+            'Ahmad Santoso', 'Siti Nurhaliza', 'Budi Prasetyo', 'Rina Kusuma', 'Dedi Wijaya',
+            'Maya Sari', 'Andi Pratama', 'Lina Wati', 'Rudi Hartono', 'Dewi Anggraini',
+            'Fajar Nugroho', 'Indah Permata', 'Joko Susilo', 'Eka Putri', 'Hendra Gunawan',
+            'Novi Rahayu', 'Agus Setiawan', 'Ratna Dewi', 'Bambang Sutrisno', 'Ani Widodo'
+        ],
+        'rating': [5, 4, 5, 3, 4, 5, 4, 3, 5, 4, 3, 4, 5, 2, 4, 5, 3, 4, 5, 4],
+        'date': [
+            '1 minggu lalu', '2 minggu lalu', '3 minggu lalu', '1 bulan lalu', '2 bulan lalu',
+            '1 minggu lalu', '2 minggu lalu', '3 minggu lalu', '1 bulan lalu', '2 bulan lalu',
+            '1 minggu lalu', '2 minggu lalu', '3 minggu lalu', '1 bulan lalu', '2 bulan lalu',
+            '1 minggu lalu', '2 minggu lalu', '3 minggu lalu', '1 bulan lalu', '2 bulan lalu'
+        ],
+        'review_text': [
+            'Tempat wisata yang sangat bagus dan menarik. Anak-anak sangat senang bermain di sini. Fasilitas lengkap dan bersih.',
+            'Cukup bagus tapi agak ramai. Harga tiket masih terjangkau. Parkir luas dan mudah.',
+            'Wahana seru dan menantang. Staff ramah dan membantu. Recommended untuk keluarga.',
+            'Biasa saja, tidak terlalu istimewa. Agak kotor di beberapa area. Perlu perawatan lebih baik.',
+            'Bagus untuk liburan keluarga. Banyak spot foto yang menarik. Makanan di food court enak.',
+            'Luar biasa! Pengalaman yang tak terlupakan. Wahana modern dan aman. Pasti akan kembali lagi.',
+            'Lumayan bagus tapi antrian panjang. Sebaiknya datang pagi hari. Overall memuaskan.',
+            'Kurang terawat dan agak kusam. Harga tidak sebanding dengan fasilitas. Kecewa.',
+            'Spektakuler! Pemandangan indah dan udara sejuk. Perfect untuk refreshing dari rutinitas.',
+            'Bagus dan edukatif. Anak-anak bisa belajar sambil bermain. Konsep yang menarik.',
+            'Standar saja, tidak ada yang spesial. Mungkin cocok untuk anak kecil. Harga lumayan.',
+            'Menyenangkan dan seru. Banyak wahana yang bisa dicoba. Cocok untuk semua umur.',
+            'Amazing experience! Teknologi canggih dan interaktif. Must visit destination di Batu.',
+            'Mengecewakan. Banyak wahana rusak dan tidak terawat. Pelayanan kurang memuaskan.',
+            'Bagus untuk foto-foto. Instagram-able banget. Tapi agak panas siang hari.',
+            'Fantastis! Koleksi lengkap dan unik. Anak-anak takjub melihat semua koleksi.',
+            'Biasa aja sih. Mungkin karena ekspektasi terlalu tinggi. Lumayan lah untuk sekali kunjung.',
+            'Recommended! Wahana lengkap dan terawat. Harga tiket worth it dengan fasilitasnya.',
+            'Keren abis! Suasana malam yang romantis. Perfect untuk date atau family time.',
+            'Bagus dan menyenangkan. Pelayanan ramah. Fasilitas bersih dan nyaman.'
+        ],
+        'wisata': [
+            'Jatim Park 1', 'Museum Angkut', 'Jatim Park 2', 'Eco Green Park', 'Jatim Park 3',
+            'Batu Night Spectacular', 'Museum Satwa', 'Selecta', 'Coban Rondo', 'Alun-alun Batu',
+            'Jatim Park 1', 'Museum Angkut', 'Jatim Park 2', 'Eco Green Park', 'Jatim Park 3',
+            'Batu Night Spectacular', 'Museum Satwa', 'Selecta', 'Coban Rondo', 'Alun-alun Batu'
+        ],
+        'visit_time': [
+            'Akhir pekan', 'Hari biasa', 'Akhir pekan', 'Hari libur nasional', 'Hari biasa',
+            'Akhir pekan', 'Hari biasa', 'Akhir pekan', 'Hari libur nasional', 'Hari biasa',
+            'Akhir pekan', 'Hari biasa', 'Akhir pekan', 'Hari libur nasional', 'Hari biasa',
+            'Akhir pekan', 'Hari biasa', 'Akhir pekan', 'Hari libur nasional', 'Hari biasa'
+        ]
+    }
+    
+    return pd.DataFrame(sample_data)
 
 def validate_csv_structure(df):
     """Validate if uploaded CSV has required columns"""
@@ -89,11 +148,20 @@ def initialize_app():
     global df_processed, metrics, model_results, current_data_info
     
     try:
+        # Create necessary directories
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'backups'), exist_ok=True)
+        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'temp'), exist_ok=True)
+        
         # Check if data file exists
         data_path = os.path.join(app.config['UPLOAD_FOLDER'], 'combined_batu_tourism_reviews_cleaned.csv')
+        
         if not os.path.exists(data_path):
-            print(f"Error: Data file not found at {data_path}")
-            return False
+            logger.info("No existing data found, creating sample data...")
+            # Create sample data for initial deployment
+            df_sample = create_sample_data()
+            df_sample.to_csv(data_path, index=False)
+            logger.info(f"Sample data created with {len(df_sample)} records")
             
         # Load and process data
         df = processor.load_data(data_path)
@@ -106,11 +174,11 @@ def initialize_app():
         # Get data info
         current_data_info = get_data_info()
         
-        print("Application initialized successfully!")
-        print(f"Model accuracy: {model_results['accuracy']:.2%}")
+        logger.info("Application initialized successfully!")
+        logger.info(f"Model accuracy: {model_results['accuracy']:.2%}")
         return True
     except Exception as e:
-        print(f"Error initializing app: {e}")
+        logger.error(f"Error initializing app: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -191,7 +259,6 @@ def upload_data():
                 shutil.copy2(existing_file, backup_path)
                 
                 # Remove duplicates based on reviewer_name, review_text, and wisata
-                # This prevents adding exact same reviews
                 df_new_clean = remove_duplicates(df_new, df_existing)
                 
                 if len(df_new_clean) == 0:
@@ -325,7 +392,7 @@ def predict():
             'sentiment': sentiment
         })
     except Exception as e:
-        print(f"Prediction error: {e}")
+        logger.error(f"Prediction error: {e}")
         return jsonify({'error': str(e)}), 500
 
 def create_charts():
@@ -372,7 +439,7 @@ def create_charts():
         # 3. Wisata Performance (Top 10)
         if 'wisata' in df_processed.columns and 'rating' in df_processed.columns:
             wisata_ratings = df_processed.groupby('wisata')['rating'].agg(['mean', 'count'])
-            wisata_ratings = wisata_ratings[wisata_ratings['count'] >= 10]
+            wisata_ratings = wisata_ratings[wisata_ratings['count'] >= 2]  # Lowered threshold for sample data
             wisata_ratings = wisata_ratings.sort_values('mean', ascending=True).tail(10)
             
             wisata_names = [name[:30] + '...' if len(name) > 30 else name for name in wisata_ratings.index.tolist()]
@@ -388,7 +455,7 @@ def create_charts():
                     'textposition': 'outside'
                 }],
                 'layout': {
-                    'title': 'Top 10 Wisata berdasarkan Rating',
+                    'title': 'Top Wisata berdasarkan Rating',
                     'xaxis': {'title': 'Rating Rata-rata', 'range': [0, 5]},
                     'yaxis': {'title': ''},
                     'margin': {'l': 150}
@@ -423,7 +490,7 @@ def create_charts():
             }, ensure_ascii=False)
         
     except Exception as e:
-        print(f"Error creating charts: {e}")
+        logger.error(f"Error creating charts: {e}")
         import traceback
         traceback.print_exc()
     
@@ -458,7 +525,6 @@ def get_top_complaints():
         
         # Define complaint keywords with their negative contexts
         complaint_patterns = {
-            # Definitely complaints
             'kotor': ['kotor', 'jorok', 'kumuh', 'tidak bersih', 'kurang bersih'],
             'mahal': ['mahal', 'kemahalan', 'overpriced', 'tidak worth', 'harga tinggi'],
             'rusak': ['rusak', 'hancur', 'tidak terawat', 'bobrok'],
@@ -476,22 +542,7 @@ def get_top_complaints():
             'pengap': ['pengap', 'tidak ada ventilasi', 'sesak'],
             'kasar': ['kasar', 'tidak ramah', 'jutek', 'galak'],
             'sepi': ['sepi', 'tidak ramai pengunjung', 'sunyi'],
-            'membosankan': ['membosankan', 'boring', 'tidak menarik', 'biasa saja'],
-            'tidak aman': ['tidak aman', 'berbahaya', 'rawan', 'menakutkan'],
-            'tidak terawat': ['tidak terawat', 'terbengkalai', 'kurang perawatan']
-        }
-        
-        # Context-dependent complaints (need negative context)
-        context_dependent = {
-            'ramai': {
-                'negative_contexts': ['terlalu ramai', 'ramai sekali', 'penuh sesak', 'crowded'],
-                'positive_contexts': ['ramai pengunjung', 'selalu ramai', 'ramai dikunjungi']
-            },
-            'kurang': {
-                'negative_contexts': ['kurang bagus', 'kurang menarik', 'kurang puas', 'kurang nyaman', 
-                                    'kurang bersih', 'kurang terawat', 'kurang layak', 'kurang worth'],
-                'positive_contexts': []
-            }
+            'membosankan': ['membosankan', 'boring', 'tidak menarik', 'biasa saja']
         }
         
         complaints = {}
@@ -504,55 +555,314 @@ def get_top_complaints():
             if count > 0:
                 complaints[complaint_type] = count
         
-        # Process context-dependent complaints
-        for word, contexts in context_dependent.items():
-            negative_count = 0
-            positive_count = 0
-            
-            # Check negative contexts
-            for neg_context in contexts['negative_contexts']:
-                negative_count += negative_reviews.str.contains(neg_context, case=False, na=False).sum()
-            
-            # Check positive contexts (to exclude)
-            for pos_context in contexts['positive_contexts']:
-                positive_count += negative_reviews.str.contains(pos_context, case=False, na=False).sum()
-            
-            # Only count as complaint if negative context dominates
-            if negative_count > positive_count and negative_count > 0:
-                complaints[word] = negative_count
-        
-        # Additional analysis for "kurang" - extract what is lacking
-        kurang_analysis = extract_kurang_complaints(negative_reviews)
-        for item, count in kurang_analysis.items():
-            if count > 2:  # Only include if mentioned more than twice
-                complaints[f'kurang {item}'] = count
-        
         # Sort by frequency
         sorted_complaints = sorted(complaints.items(), key=lambda x: x[1], reverse=True)
         
         return sorted_complaints[:15]
     except Exception as e:
-        print(f"Error getting complaints: {e}")
+        logger.error(f"Error getting complaints: {e}")
         return []
 
-def extract_kurang_complaints(reviews):
-    """Extract what specifically is 'kurang' (lacking) from reviews"""
-    kurang_items = {}
-    
-    # Common things that might be lacking in tourism context
-    lacking_aspects = [
-        'bersih', 'nyaman', 'terawat', 'menarik', 'bagus', 'puas',
-        'layak', 'worth', 'ramah', 'luas', 'sejuk', 'aman',
-        'fasilitas', 'pelayanan', 'perawatan', 'kebersihan'
-    ]
-    
-    for aspect in lacking_aspects:
-        pattern = f'kurang {aspect}'
-        count = reviews.str.contains(pattern, case=False, na=False).sum()
-        if count > 0:
-            kurang_items[aspect] = count
-    
-    return kurang_items
+def get_improvement_suggestions():
+    """Generate improvement suggestions based on analysis"""
+    try:
+        suggestions = []
+        
+        if not metrics or 'wisata_metrics' not in metrics:
+            return suggestions
+        
+        # Analyze each wisata
+        for wisata, data in metrics['wisata_metrics'].items():
+            avg_rating = data.get('avg_rating', 0)
+            total_reviews = data.get('total_reviews', 0)
+            
+            if total_reviews < 2:  # Lowered threshold for sample data
+                continue
+                
+            if avg_rating < 3.5:
+                suggestions.append({
+                    'wisata': wisata,
+                    'priority': 'URGENT',
+                    'issue': f'Rating sangat rendah ({avg_rating:.2f}/5)',
+                    'suggestion': 'Perlu evaluasi menyeluruh dan perbaikan segera pada semua aspek layanan',
+                    'impact': 'HIGH'
+                })
+            elif avg_rating < 4.0:
+                suggestions.append({
+                    'wisata': wisata,
+                    'priority': 'HIGH',
+                    'issue': f'Rating di bawah standar ({avg_rating:.2f}/5)',
+                    'suggestion': 'Fokus perbaikan pada keluhan utama pengunjung',
+                    'impact': 'MEDIUM'
+                })
+        
+        # Overall suggestions
+        if metrics.get('negative_percentage', 0) > 20:
+            suggestions.append({
+                'wisata': 'SEMUA DESTINASI',
+                'priority': 'URGENT',
+                'issue': f'Sentimen negatif tinggi ({metrics["negative_percentage"]:.1f}%)',
+                'suggestion': 'Implementasi sistem penanganan keluhan terpadu dan responsif',
+                'impact': 'HIGH'
+            })
+        
+        # Sort by priority
+        priority_order = {'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3}
+        suggestions.sort(key=lambda x: priority_order.get(x['priority'], 4))
+        
+        return suggestions[:10]
+    except Exception as e:
+        logger.error(f"Error getting suggestions: {e}")
+        return []
+
+def get_time_based_analysis():
+    """Analyze patterns based on visit time"""
+    try:
+        if 'visit_time' not in df_processed.columns:
+            return {}
+            
+        time_analysis = {}
+        
+        for visit_time in df_processed['visit_time'].unique():
+            time_df = df_processed[df_processed['visit_time'] == visit_time]
+            
+            time_analysis[visit_time] = {
+                'total_reviews': len(time_df),
+                'avg_rating': time_df['rating'].mean(),
+                'sentiment_distribution': {
+                    'positive': (time_df['sentiment'] == 'positive').sum(),
+                    'negative': (time_df['sentiment'] == 'negative').sum(),
+                    'neutral': (time_df['sentiment'] == 'neutral').sum()
+                },
+                'top_wisata': time_df['wisata'].value_counts().head(3).to_dict()
+            }
+        
+        return time_analysis
+    except Exception as e:
+        logger.error(f"Error in time analysis: {e}")
+        return {}
+
+def get_wisata_detailed_analysis():
+    """Get detailed analysis for each wisata"""
+    try:
+        wisata_details = {}
+        
+        # Get top wisata by review count
+        top_wisata = df_processed['wisata'].value_counts().head(10).index
+        
+        for wisata in top_wisata:
+            wisata_df = df_processed[df_processed['wisata'] == wisata]
+            
+            # Extract common keywords from this wisata's reviews
+            all_keywords = []
+            for keywords in wisata_df['keywords']:
+                if keywords:
+                    all_keywords.extend(keywords)
+            
+            keyword_freq = pd.Series(all_keywords).value_counts().head(10).to_dict() if all_keywords else {}
+            
+            # Calculate satisfaction level based on rating
+            avg_rating = wisata_df['rating'].mean()
+            if avg_rating >= 4.5:
+                satisfaction_level = "Excellent"
+                level_color = "success"
+            elif avg_rating >= 4.0:
+                satisfaction_level = "Very Good"
+                level_color = "info"
+            elif avg_rating >= 3.5:
+                satisfaction_level = "Good"
+                level_color = "warning"
+            else:
+                satisfaction_level = "Needs Improvement"
+                level_color = "danger"
+            
+            # Get sentiment breakdown
+            sentiment_breakdown = wisata_df['sentiment'].value_counts().to_dict()
+            positive_ratio = sentiment_breakdown.get('positive', 0) / len(wisata_df) * 100
+            negative_ratio = sentiment_breakdown.get('negative', 0) / len(wisata_df) * 100
+            
+            # Find most common rating
+            most_common_rating = wisata_df['rating'].mode().iloc[0] if not wisata_df['rating'].mode().empty else 0
+            
+            # Calculate review engagement (based on review length)
+            avg_length = wisata_df['review_length'].mean()
+            if avg_length > 200:
+                engagement = "High"
+            elif avg_length > 100:
+                engagement = "Medium"
+            else:
+                engagement = "Low"
+            
+            wisata_details[wisata] = {
+                'total_reviews': len(wisata_df),
+                'avg_rating': avg_rating,
+                'rating_distribution': wisata_df['rating'].value_counts().to_dict(),
+                'sentiment_counts': sentiment_breakdown,
+                'top_keywords': keyword_freq,
+                'avg_review_length': avg_length,
+                'satisfaction_level': satisfaction_level,
+                'level_color': level_color,
+                'positive_ratio': positive_ratio,
+                'negative_ratio': negative_ratio,
+                'most_common_rating': most_common_rating,
+                'engagement_level': engagement
+            }
+        
+        return wisata_details
+    except Exception as e:
+        logger.error(f"Error in wisata analysis: {e}")
+        return {}
+
+def get_sentiment_analysis():
+    """Deep sentiment analysis"""
+    try:
+        sentiment_data = {
+            'overall_distribution': df_processed['sentiment'].value_counts().to_dict(),
+            'by_rating': {},
+            'sentiment_keywords': {}
+        }
+        
+        # Sentiment by rating
+        for rating in range(1, 6):
+            rating_df = df_processed[df_processed['rating'] == rating]
+            if len(rating_df) > 0:
+                sentiment_data['by_rating'][rating] = rating_df['sentiment'].value_counts().to_dict()
+        
+        # Extract keywords by sentiment
+        for sentiment in ['positive', 'negative', 'neutral']:
+            sentiment_df = df_processed[df_processed['sentiment'] == sentiment]
+            all_keywords = []
+            for keywords in sentiment_df['keywords']:
+                if keywords:
+                    all_keywords.extend(keywords)
+            
+            if all_keywords:
+                sentiment_data['sentiment_keywords'][sentiment] = pd.Series(all_keywords).value_counts().head(15).to_dict()
+            else:
+                sentiment_data['sentiment_keywords'][sentiment] = {}
+        
+        return sentiment_data
+    except Exception as e:
+        logger.error(f"Error in sentiment analysis: {e}")
+        return {}
+
+def get_keyword_analysis():
+    """Analyze most common keywords and phrases"""
+    try:
+        # Overall keyword frequency
+        all_keywords = []
+        for keywords in df_processed['keywords']:
+            if keywords:
+                all_keywords.extend(keywords)
+        
+        if not all_keywords:
+            return {
+                'top_keywords': {},
+                'positive_keywords': [],
+                'negative_keywords': []
+            }
+        
+        keyword_freq = pd.Series(all_keywords).value_counts()
+        
+        # Categorize keywords
+        positive_keywords = []
+        negative_keywords = []
+        
+        # Ambil keywords dari review positif dan negatif
+        positive_reviews = df_processed[df_processed['sentiment'] == 'positive']
+        negative_reviews = df_processed[df_processed['sentiment'] == 'negative']
+        
+        # Keywords dari review positif
+        pos_keywords = []
+        for keywords in positive_reviews['keywords']:
+            if keywords:
+                pos_keywords.extend(keywords)
+        
+        # Keywords dari review negatif  
+        neg_keywords = []
+        for keywords in negative_reviews['keywords']:
+            if keywords:
+                neg_keywords.extend(keywords)
+        
+        # Hitung frekuensi di masing-masing sentiment
+        pos_counter = Counter(pos_keywords)
+        neg_counter = Counter(neg_keywords)
+        
+        # Kategorikan berdasarkan dominasi di sentiment tertentu
+        all_unique_keywords = set(pos_keywords + neg_keywords)
+        
+        for keyword in all_unique_keywords:
+            pos_count = pos_counter.get(keyword, 0)
+            neg_count = neg_counter.get(keyword, 0)
+            total_count = pos_count + neg_count
+            
+            if total_count >= 2:  # Minimal muncul 2 kali untuk sample data
+                # Jika lebih dominan di positive
+                if pos_count > neg_count and pos_count / total_count >= 0.6:
+                    positive_keywords.append((keyword, pos_count))
+                # Jika lebih dominan di negative
+                elif neg_count > pos_count and neg_count / total_count >= 0.6:
+                    negative_keywords.append((keyword, neg_count))
+        
+        # Sort
+        positive_keywords.sort(key=lambda x: x[1], reverse=True)
+        negative_keywords.sort(key=lambda x: x[1], reverse=True)
+        
+        return {
+            'top_keywords': keyword_freq.head(20).to_dict(),
+            'positive_keywords': positive_keywords[:15],
+            'negative_keywords': negative_keywords[:15]
+        }
+    except Exception as e:
+        logger.error(f"Error in keyword analysis: {e}")
+        return {
+            'top_keywords': {},
+            'positive_keywords': [],
+            'negative_keywords': []
+        }
+
+def get_rating_patterns():
+    """Analyze rating patterns and distributions"""
+    try:
+        patterns = {
+            'distribution': df_processed['rating'].value_counts().sort_index().to_dict(),
+            'by_wisata_type': {},
+            'consistency_score': 0
+        }
+        
+        # Calculate consistency score (lower std = more consistent)
+        wisata_ratings_std = df_processed.groupby('wisata')['rating'].std()
+        patterns['consistency_score'] = 1 - (wisata_ratings_std.mean() / 5)  # Normalize to 0-1
+        
+        # Identify wisata with most consistent ratings
+        patterns['most_consistent'] = wisata_ratings_std.nsmallest(5).to_dict()
+        patterns['least_consistent'] = wisata_ratings_std.nlargest(5).to_dict()
+        
+        return patterns
+    except Exception as e:
+        logger.error(f"Error in rating patterns: {e}")
+        return {}
+
+def get_visitor_insights():
+    """Extract insights about visitors"""
+    try:
+        insights = {
+            'review_length_analysis': {
+                'short_reviews': (df_processed['review_length'] < 50).sum(),
+                'medium_reviews': ((df_processed['review_length'] >= 50) & (df_processed['review_length'] < 150)).sum(),
+                'long_reviews': (df_processed['review_length'] >= 150).sum()
+            },
+            'engagement_by_rating': df_processed.groupby('rating')['review_length'].mean().to_dict(),
+            'visit_patterns': df_processed['visit_time'].value_counts().to_dict()
+        }
+        
+        # Correlation between review length and rating
+        insights['length_rating_correlation'] = df_processed['review_length'].corr(df_processed['rating'])
+        
+        return insights
+    except Exception as e:
+        logger.error(f"Error in visitor insights: {e}")
+        return {}
 
 def get_complaint_details():
     """Get detailed complaint analysis with context"""
@@ -608,368 +918,14 @@ def get_complaint_details():
         return complaint_details
         
     except Exception as e:
-        print(f"Error in complaint details: {e}")
+        logger.error(f"Error in complaint details: {e}")
         return {}
 
-def get_improvement_suggestions():
-    """Generate improvement suggestions based on analysis"""
-    try:
-        suggestions = []
-        
-        if not metrics or 'wisata_metrics' not in metrics:
-            return suggestions
-        
-        # Analyze each wisata
-        for wisata, data in metrics['wisata_metrics'].items():
-            avg_rating = data.get('avg_rating', 0)
-            total_reviews = data.get('total_reviews', 0)
-            
-            if total_reviews < 10:
-                continue
-                
-            if avg_rating < 3.5:
-                suggestions.append({
-                    'wisata': wisata,
-                    'priority': 'URGENT',
-                    'issue': f'Rating sangat rendah ({avg_rating:.2f}/5)',
-                    'suggestion': 'Perlu evaluasi menyeluruh dan perbaikan segera pada semua aspek layanan',
-                    'impact': 'HIGH'
-                })
-            elif avg_rating < 4.0:
-                suggestions.append({
-                    'wisata': wisata,
-                    'priority': 'HIGH',
-                    'issue': f'Rating di bawah standar ({avg_rating:.2f}/5)',
-                    'suggestion': 'Fokus perbaikan pada keluhan utama pengunjung',
-                    'impact': 'MEDIUM'
-                })
-            elif avg_rating < 4.5:
-                suggestions.append({
-                    'wisata': wisata,
-                    'priority': 'MEDIUM',
-                    'issue': f'Rating cukup baik ({avg_rating:.2f}/5)',
-                    'suggestion': 'Tingkatkan konsistensi layanan untuk mencapai excellence',
-                    'impact': 'LOW'
-                })
-        
-        # Overall suggestions
-        if metrics.get('negative_percentage', 0) > 20:
-            suggestions.append({
-                'wisata': 'SEMUA DESTINASI',
-                'priority': 'URGENT',
-                'issue': f'Sentimen negatif tinggi ({metrics["negative_percentage"]:.1f}%)',
-                'suggestion': 'Implementasi sistem penanganan keluhan terpadu dan responsif',
-                'impact': 'HIGH'
-            })
-        
-        if metrics.get('overall_satisfaction', 0) < 4.0:
-            suggestions.append({
-                'wisata': 'SISTEM KESELURUHAN',
-                'priority': 'HIGH',
-                'issue': f'Kepuasan overall rendah ({metrics["overall_satisfaction"]:.2f}/5)',
-                'suggestion': 'Diperlukan program peningkatan kualitas menyeluruh',
-                'impact': 'HIGH'
-            })
-        
-        # Sort by priority
-        priority_order = {'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3}
-        suggestions.sort(key=lambda x: priority_order.get(x['priority'], 4))
-        
-        return suggestions[:10]
-    except Exception as e:
-        print(f"Error getting suggestions: {e}")
-        return []
-
-def get_time_based_analysis():
-    """Analyze patterns based on visit time"""
-    try:
-        if 'visit_time' not in df_processed.columns:
-            return {}
-            
-        time_analysis = {}
-        
-        for visit_time in df_processed['visit_time'].unique():
-            time_df = df_processed[df_processed['visit_time'] == visit_time]
-            
-            time_analysis[visit_time] = {
-                'total_reviews': len(time_df),
-                'avg_rating': time_df['rating'].mean(),
-                'sentiment_distribution': {
-                    'positive': (time_df['sentiment'] == 'positive').sum(),
-                    'negative': (time_df['sentiment'] == 'negative').sum(),
-                    'neutral': (time_df['sentiment'] == 'neutral').sum()
-                },
-                'top_wisata': time_df['wisata'].value_counts().head(3).to_dict()
-            }
-        
-        return time_analysis
-    except Exception as e:
-        print(f"Error in time analysis: {e}")
-        return {}
-
-def get_wisata_detailed_analysis():
-    """Get detailed analysis for each wisata"""
-    try:
-        wisata_details = {}
-        
-        # Get top 10 wisata by review count
-        top_wisata = df_processed['wisata'].value_counts().head(10).index
-        
-        for wisata in top_wisata:
-            wisata_df = df_processed[df_processed['wisata'] == wisata]
-            
-            # Extract common keywords from this wisata's reviews
-            all_keywords = []
-            for keywords in wisata_df['keywords']:
-                if keywords:
-                    all_keywords.extend(keywords)
-            
-            keyword_freq = pd.Series(all_keywords).value_counts().head(10).to_dict()
-            
-            # Calculate satisfaction level based on rating
-            avg_rating = wisata_df['rating'].mean()
-            if avg_rating >= 4.5:
-                satisfaction_level = "Excellent"
-                level_color = "success"
-            elif avg_rating >= 4.0:
-                satisfaction_level = "Very Good"
-                level_color = "info"
-            elif avg_rating >= 3.5:
-                satisfaction_level = "Good"
-                level_color = "warning"
-            else:
-                satisfaction_level = "Needs Improvement"
-                level_color = "danger"
-            
-            # Get sentiment breakdown
-            sentiment_breakdown = wisata_df['sentiment'].value_counts().to_dict()
-            positive_ratio = sentiment_breakdown.get('positive', 0) / len(wisata_df) * 100
-            negative_ratio = sentiment_breakdown.get('negative', 0) / len(wisata_df) * 100
-            
-            # Find most common rating
-            most_common_rating = wisata_df['rating'].mode().iloc[0] if not wisata_df['rating'].mode().empty else 0
-            
-            # Calculate review engagement (based on review length)
-            avg_length = wisata_df['review_length'].mean()
-            if avg_length > 200:
-                engagement = "High"
-            elif avg_length > 100:
-                engagement = "Medium"
-            else:
-                engagement = "Low"
-            
-            wisata_details[wisata] = {
-                'total_reviews': len(wisata_df),
-                'avg_rating': avg_rating,
-                'rating_distribution': wisata_df['rating'].value_counts().to_dict(),
-                'sentiment_counts': sentiment_breakdown,
-                'top_keywords': keyword_freq,
-                'avg_review_length': avg_length,
-                'satisfaction_level': satisfaction_level,
-                'level_color': level_color,
-                'positive_ratio': positive_ratio,
-                'negative_ratio': negative_ratio,
-                'most_common_rating': most_common_rating,
-                'engagement_level': engagement
-            }
-        
-        return wisata_details
-    except Exception as e:
-        print(f"Error in wisata analysis: {e}")
-        return {}
-
-def get_sentiment_analysis():
-    """Deep sentiment analysis"""
-    try:
-        sentiment_data = {
-            'overall_distribution': df_processed['sentiment'].value_counts().to_dict(),
-            'by_rating': {},
-            'sentiment_keywords': {}
-        }
-        
-        # Sentiment by rating
-        for rating in range(1, 6):
-            rating_df = df_processed[df_processed['rating'] == rating]
-            if len(rating_df) > 0:
-                sentiment_data['by_rating'][rating] = rating_df['sentiment'].value_counts().to_dict()
-        
-        # Extract keywords by sentiment - DIPERBAIKI
-        for sentiment in ['positive', 'negative', 'neutral']:
-            sentiment_df = df_processed[df_processed['sentiment'] == sentiment]
-            all_keywords = []
-            for keywords in sentiment_df['keywords']:
-                if keywords:
-                    all_keywords.extend(keywords)
-            
-            if all_keywords:
-                sentiment_data['sentiment_keywords'][sentiment] = pd.Series(all_keywords).value_counts().head(15).to_dict()
-            else:
-                sentiment_data['sentiment_keywords'][sentiment] = {}
-        
-        return sentiment_data
-    except Exception as e:
-        print(f"Error in sentiment analysis: {e}")
-        return {}
-
-def get_keyword_analysis():
-    """Analyze most common keywords and phrases - DIPERBAIKI"""
-    try:
-        # Overall keyword frequency
-        all_keywords = []
-        for keywords in df_processed['keywords']:
-            if keywords:
-                all_keywords.extend(keywords)
-        
-        if not all_keywords:
-            return {
-                'top_keywords': {},
-                'positive_keywords': [],
-                'negative_keywords': []
-            }
-        
-        keyword_freq = pd.Series(all_keywords).value_counts()
-        
-        # Categorize keywords dengan logika yang lebih baik
-        positive_keywords = []
-        negative_keywords = []
-        
-        # Ambil keywords dari review positif dan negatif
-        positive_reviews = df_processed[df_processed['sentiment'] == 'positive']
-        negative_reviews = df_processed[df_processed['sentiment'] == 'negative']
-        
-        # Keywords dari review positif
-        pos_keywords = []
-        for keywords in positive_reviews['keywords']:
-            if keywords:
-                pos_keywords.extend(keywords)
-        
-        # Keywords dari review negatif  
-        neg_keywords = []
-        for keywords in negative_reviews['keywords']:
-            if keywords:
-                neg_keywords.extend(keywords)
-        
-        # Hitung frekuensi di masing-masing sentiment
-        pos_counter = Counter(pos_keywords)
-        neg_counter = Counter(neg_keywords)
-        
-        # Kategorikan berdasarkan dominasi di sentiment tertentu
-        all_unique_keywords = set(pos_keywords + neg_keywords)
-        
-        for keyword in all_unique_keywords:
-            pos_count = pos_counter.get(keyword, 0)
-            neg_count = neg_counter.get(keyword, 0)
-            total_count = pos_count + neg_count
-            
-            if total_count >= 3:  # Minimal muncul 3 kali
-                # Jika lebih dominan di positive (minimal 60% dari total)
-                if pos_count > neg_count and pos_count / total_count >= 0.6:
-                    positive_keywords.append((keyword, pos_count))
-                # Jika lebih dominan di negative (minimal 60% dari total)
-                elif neg_count > pos_count and neg_count / total_count >= 0.6:
-                    negative_keywords.append((keyword, neg_count))
-        
-        # Tambahkan keywords dari processor untuk memastikan ada data
-        processor_pos = []
-        processor_neg = []
-        
-        # Dari positive words di processor
-        for word in processor.positive_words:
-            count_in_pos = sum(1 for text in positive_reviews['cleaned_text'] 
-                             if word in str(text).lower())
-            if count_in_pos > 0:
-                processor_pos.append((word, count_in_pos))
-        
-        # Dari negative words di processor  
-        for word in processor.negative_words:
-            count_in_neg = sum(1 for text in negative_reviews['cleaned_text'] 
-                             if word in str(text).lower())
-            if count_in_neg > 0:
-                processor_neg.append((word, count_in_neg))
-        
-        # Gabungkan dan sort
-        all_positive = positive_keywords + processor_pos
-        all_negative = negative_keywords + processor_neg
-        
-        # Remove duplicates dan sort
-        pos_dict = {}
-        for word, count in all_positive:
-            pos_dict[word] = pos_dict.get(word, 0) + count
-        
-        neg_dict = {}
-        for word, count in all_negative:
-            neg_dict[word] = neg_dict.get(word, 0) + count
-        
-        final_positive = sorted(pos_dict.items(), key=lambda x: x[1], reverse=True)
-        final_negative = sorted(neg_dict.items(), key=lambda x: x[1], reverse=True)
-        
-        return {
-            'top_keywords': keyword_freq.head(20).to_dict(),
-            'positive_keywords': final_positive[:15],
-            'negative_keywords': final_negative[:15]
-        }
-    except Exception as e:
-        print(f"Error in keyword analysis: {e}")
-        import traceback
-        traceback.print_exc()
-        return {
-            'top_keywords': {},
-            'positive_keywords': [],
-            'negative_keywords': []
-        }
-
-def get_rating_patterns():
-    """Analyze rating patterns and distributions"""
-    try:
-        patterns = {
-            'distribution': df_processed['rating'].value_counts().sort_index().to_dict(),
-            'by_wisata_type': {},
-            'consistency_score': 0
-        }
-        
-        # Calculate consistency score (lower std = more consistent)
-        wisata_ratings_std = df_processed.groupby('wisata')['rating'].std()
-        patterns['consistency_score'] = 1 - (wisata_ratings_std.mean() / 5)  # Normalize to 0-1
-        
-        # Identify wisata with most consistent ratings
-        patterns['most_consistent'] = wisata_ratings_std.nsmallest(5).to_dict()
-        patterns['least_consistent'] = wisata_ratings_std.nlargest(5).to_dict()
-        
-        return patterns
-    except Exception as e:
-        print(f"Error in rating patterns: {e}")
-        return {}
-
-def get_visitor_insights():
-    """Extract insights about visitors"""
-    try:
-        insights = {
-            'review_length_analysis': {
-                'short_reviews': (df_processed['review_length'] < 50).sum(),
-                'medium_reviews': ((df_processed['review_length'] >= 50) & (df_processed['review_length'] < 150)).sum(),
-                'long_reviews': (df_processed['review_length'] >= 150).sum()
-            },
-            'engagement_by_rating': df_processed.groupby('rating')['review_length'].mean().to_dict(),
-            'visit_patterns': df_processed['visit_time'].value_counts().to_dict()
-        }
-        
-        # Correlation between review length and rating
-        insights['length_rating_correlation'] = df_processed['review_length'].corr(df_processed['rating'])
-        
-        return insights
-    except Exception as e:
-        print(f"Error in visitor insights: {e}")
-        return {}
+# Initialize app on startup for Vercel
+try:
+    initialize_app()
+except Exception as e:
+    logger.error(f"Failed to initialize on startup: {e}")
 
 if __name__ == '__main__':
-    # Create necessary directories
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'backups'), exist_ok=True)
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'temp'), exist_ok=True)
-    
-    # Initialize app on startup
-    if initialize_app():
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    else:
-        print("No data file found. Please upload data through the web interface.")
-        app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

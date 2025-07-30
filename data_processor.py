@@ -3,48 +3,93 @@ import numpy as np
 import re
 from textblob import TextBlob
 import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+import os
 import string
 from collections import Counter
 import requests
-import os
+import logging
 
-# Download required NLTK data
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Set NLTK data path untuk Vercel
+nltk_data_dir = '/tmp/nltk_data'
+if not os.path.exists(nltk_data_dir):
+    os.makedirs(nltk_data_dir)
+nltk.data.path.append(nltk_data_dir)
+
+# Download required NLTK data dengan error handling yang lebih baik
+def download_nltk_data():
+    try:
+        nltk.data.find('tokenizers/punkt')
+        logger.info("NLTK punkt already available")
+    except LookupError:
+        try:
+            logger.info("Downloading NLTK punkt...")
+            nltk.download('punkt', download_dir=nltk_data_dir, quiet=True)
+            logger.info("NLTK punkt downloaded successfully")
+        except Exception as e:
+            logger.warning(f"Could not download punkt: {e}")
+
+    try:
+        nltk.data.find('corpora/stopwords')
+        logger.info("NLTK stopwords already available")
+    except LookupError:
+        try:
+            logger.info("Downloading NLTK stopwords...")
+            nltk.download('stopwords', download_dir=nltk_data_dir, quiet=True)
+            logger.info("NLTK stopwords downloaded successfully")
+        except Exception as e:
+            logger.warning(f"Could not download stopwords: {e}")
+
+# Panggil fungsi download
+download_nltk_data()
+
+# Import with fallback
 try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
+    from nltk.tokenize import word_tokenize
+    from nltk.corpus import stopwords
+except ImportError:
+    logger.warning("NLTK import failed, using fallback tokenization")
+    def word_tokenize(text):
+        return text.split()
 
 class DataProcessor:
     def __init__(self):
-        # Load datasets from URLs or local files
+        # Load datasets with fallback
         self.stop_words = self.load_stopwords()
         self.positive_words, self.negative_words = self.load_sentiment_words()
         self.domain_words = self.load_domain_words()
+        logger.info(f"DataProcessor initialized - Stopwords: {len(self.stop_words)}, Positive: {len(self.positive_words)}, Negative: {len(self.negative_words)}")
     
     def load_stopwords(self):
-        """Load Indonesian stopwords from dataset"""
+        """Load Indonesian stopwords with fallback"""
         try:
-            # Try to load from URL first
+            # Try to load from NLTK first
+            try:
+                from nltk.corpus import stopwords
+                nltk_stopwords = set(stopwords.words('indonesian'))
+                if nltk_stopwords:
+                    logger.info(f"Loaded {len(nltk_stopwords)} stopwords from NLTK")
+                    return nltk_stopwords
+            except:
+                pass
+            
+            # Try to load from URL
             url = "https://raw.githubusercontent.com/stopwords-iso/stopwords-id/master/stopwords-id.txt"
             response = requests.get(url, timeout=10)
             
             if response.status_code == 200:
                 stopwords_list = response.text.strip().split('\n')
-                print(f"Loaded {len(stopwords_list)} stopwords from online dataset")
+                logger.info(f"Loaded {len(stopwords_list)} stopwords from online dataset")
                 return set(stopwords_list)
             else:
                 raise Exception("Failed to fetch from URL")
                 
         except Exception as e:
-            print(f"Failed to load stopwords from URL: {e}")
-            print("Using fallback stopwords...")
+            logger.warning(f"Failed to load stopwords from external sources: {e}")
+            logger.info("Using fallback stopwords...")
             
             # Fallback to curated list
             return set([
@@ -78,14 +123,14 @@ class DataProcessor:
             ])
     
     def load_sentiment_words(self):
-        """Load positive and negative words from dataset"""
+        """Load positive and negative words with fallback"""
         try:
-            # Try to load from comprehensive Indonesian sentiment lexicon
             positive_words = set()
             negative_words = set()
             
-            # Option 1: Try to load from InSet repository
+            # Try to load from online sources
             try:
+                # Option 1: Try InSet repository
                 url = "https://raw.githubusercontent.com/fajri91/InSet/master/positive_negative_words_id.txt"
                 response = requests.get(url, timeout=10)
                 
@@ -102,35 +147,34 @@ class DataProcessor:
                                 elif sentiment == 'negative':
                                     negative_words.add(word)
                     
-                    print(f"Loaded {len(positive_words)} positive and {len(negative_words)} negative words from InSet")
-                    return positive_words, negative_words
+                    if positive_words and negative_words:
+                        logger.info(f"Loaded {len(positive_words)} positive and {len(negative_words)} negative words from InSet")
+                        return positive_words, negative_words
             except:
                 pass
             
             # Option 2: Try alternative source
             try:
-                # Load positive words
                 pos_url = "https://raw.githubusercontent.com/riochr17/Analisis-Sentimen-ID/master/positive_words.txt"
                 response = requests.get(pos_url, timeout=10)
                 if response.status_code == 200:
                     positive_words = set(response.text.strip().split('\n'))
                 
-                # Load negative words
                 neg_url = "https://raw.githubusercontent.com/riochr17/Analisis-Sentimen-ID/master/negative_words.txt"
                 response = requests.get(neg_url, timeout=10)
                 if response.status_code == 200:
                     negative_words = set(response.text.strip().split('\n'))
                 
                 if positive_words and negative_words:
-                    print(f"Loaded {len(positive_words)} positive and {len(negative_words)} negative words from alternative source")
+                    logger.info(f"Loaded {len(positive_words)} positive and {len(negative_words)} negative words from alternative source")
                     return positive_words, negative_words
             except:
                 pass
                 
         except Exception as e:
-            print(f"Failed to load sentiment words from online sources: {e}")
+            logger.warning(f"Failed to load sentiment words from online sources: {e}")
         
-        print("Using fallback sentiment words...")
+        logger.info("Using fallback sentiment words...")
         
         # Fallback positive words
         positive_words = set([
@@ -187,7 +231,6 @@ class DataProcessor:
     
     def load_domain_words(self):
         """Load domain-specific words for tourism"""
-        # Tourism domain words - these are curated for Indonesian tourism context
         return set([
             # Tempat wisata
             'wisata', 'destinasi', 'objek', 'lokasi', 'tempat', 'area',
@@ -213,48 +256,14 @@ class DataProcessor:
             'traveler', 'visitor', 'guest', 'customer'
         ])
     
-    def save_datasets_locally(self):
-        """Save loaded datasets locally for faster future loading"""
-        try:
-            os.makedirs('datasets', exist_ok=True)
-            
-            # Save stopwords
-            with open('datasets/stopwords_id.txt', 'w', encoding='utf-8') as f:
-                for word in sorted(self.stop_words):
-                    f.write(f"{word}\n")
-            
-            # Save positive words
-            with open('datasets/positive_words_id.txt', 'w', encoding='utf-8') as f:
-                for word in sorted(self.positive_words):
-                    f.write(f"{word}\n")
-            
-            # Save negative words
-            with open('datasets/negative_words_id.txt', 'w', encoding='utf-8') as f:
-                for word in sorted(self.negative_words):
-                    f.write(f"{word}\n")
-            
-            # Save domain words
-            with open('datasets/domain_words_tourism.txt', 'w', encoding='utf-8') as f:
-                for word in sorted(self.domain_words):
-                    f.write(f"{word}\n")
-            
-            print("Datasets saved locally in 'datasets' folder")
-            
-        except Exception as e:
-            print(f"Failed to save datasets locally: {e}")
-    
     def load_data(self, filepath):
         """Load and return the dataset"""
         try:
             df = pd.read_csv(filepath)
-            print(f"Successfully loaded {len(df)} reviews")
-            
-            # Save datasets locally after successful initialization
-            self.save_datasets_locally()
-            
+            logger.info(f"Successfully loaded {len(df)} reviews from {filepath}")
             return df
         except Exception as e:
-            print(f"Error loading data: {e}")
+            logger.error(f"Error loading data: {e}")
             raise
     
     def clean_text(self, text):
@@ -289,21 +298,19 @@ class DataProcessor:
         
         text_lower = text.lower()
         
-        # Count positive and negative words dengan konteks yang lebih baik
+        # Count positive and negative words
         positive_count = 0
         negative_count = 0
         
         # Hitung kata positif
         for word in self.positive_words:
             if word in text_lower:
-                # Berikan bobot lebih untuk kata yang lebih spesifik
                 weight = 2 if len(word.split()) > 1 else 1
                 positive_count += text_lower.count(word) * weight
         
-        # Hitung kata negatif dengan konteks
+        # Hitung kata negatif
         for word in self.negative_words:
             if word in text_lower:
-                # Berikan bobot lebih untuk kata yang lebih spesifik
                 weight = 2 if len(word.split()) > 1 else 1
                 negative_count += text_lower.count(word) * weight
         
@@ -324,7 +331,7 @@ class DataProcessor:
         except:
             polarity = 0
         
-        # Combine keyword-based and TextBlob sentiment dengan threshold yang lebih sensitif
+        # Combine keyword-based and TextBlob sentiment
         if positive_count > negative_count and (positive_count > 0 or polarity > 0.05):
             return 'positive'
         elif negative_count > positive_count and (negative_count > 0 or polarity < -0.05):
@@ -360,7 +367,6 @@ class DataProcessor:
             return True
             
         # For other words, check if they might be meaningful
-        # Skip words that are likely typos or informal variations
         informal_patterns = [
             r'^[a-z]{1,2}$',  # Single or double letters
             r'^ng[a-z]+',     # Words starting with 'ng'
@@ -378,8 +384,11 @@ class DataProcessor:
             return []
             
         try:
-            # Tokenize
-            words = word_tokenize(text.lower())
+            # Tokenize with fallback
+            try:
+                words = word_tokenize(text.lower())
+            except:
+                words = text.lower().split()
             
             # Filter meaningful words only
             meaningful_words = [w for w in words if self.is_meaningful_word(w)]
@@ -409,12 +418,12 @@ class DataProcessor:
             return [word[0] for word in sorted_words[:n]]
             
         except Exception as e:
-            print(f"Error in extract_keywords: {e}")
+            logger.error(f"Error in extract_keywords: {e}")
             return []
     
     def process_reviews(self, df):
         """Process all reviews and add features"""
-        print("Processing reviews...")
+        logger.info("Processing reviews...")
         
         # Create a copy to avoid modifying original
         df = df.copy()
@@ -438,9 +447,8 @@ class DataProcessor:
         if 'visit_time' not in df.columns:
             df['visit_time'] = 'Tidak diketahui'
         
-        print(f"Processed {len(df)} reviews")
-        print(f"Sentiment distribution: {df['sentiment'].value_counts().to_dict()}")
-        print(f"Loaded datasets - Stopwords: {len(self.stop_words)}, Positive: {len(self.positive_words)}, Negative: {len(self.negative_words)}")
+        logger.info(f"Processed {len(df)} reviews")
+        logger.info(f"Sentiment distribution: {df['sentiment'].value_counts().to_dict()}")
         
         return df
     
